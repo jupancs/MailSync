@@ -1,0 +1,167 @@
+<?xml version='1.0'?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <name>== GreenMail Core ==</name>
+  <description>GreenMail - Email Test Servers</description>
+  <url>http://www.icegreen.com/greenmail/</url>
+
+  <groupId>com.icegreen</groupId>
+  <artifactId>greenmail</artifactId>
+  <packaging>jar</packaging>
+  <version>1.6.0-SNAPSHOT</version>
+
+  <parent>
+    <groupId>com.icegreen</groupId>
+    <artifactId>greenmail-parent</artifactId>
+    <version>1.6.0-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
+  <dependencies>
+    <!-- Compile scope (=default) -->
+    <dependency>
+      <groupId>com.sun.mail</groupId>
+      <artifactId>javax.mail</artifactId>
+    </dependency>
+   <dependency> <!-- SLF4J Core -->
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    
+    <!-- We need junit in compile scope since we want to offer Junit specific functionality (e.g. the GreenMailRule) -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>compile</scope>
+      <!-- We only need the API in compile scope. Matchers are needed in test scope -->
+      <exclusions>
+        <exclusion>
+          <groupId>org.hamcrest</groupId>
+          <artifactId>hamcrest-core</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!-- Test scope -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-all</artifactId>
+    </dependency>
+    
+    <!-- new added -->
+    <dependency>
+    	<groupId>net.named-data</groupId>
+    	<artifactId>jndn</artifactId>
+    	<version>0.16</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.2.4</version>
+    </dependency>
+    <dependency>
+      <groupId>com.couchbase.client</groupId>
+      <artifactId>java-client</artifactId>
+      <version>2.7.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.6.3</version>
+    </dependency>
+    <dependency>
+      <artifactId>guava</artifactId>
+      <groupId>com.google.guava</groupId>
+      <type>jar</type>
+      <version>14.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20180130</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>2.6.1</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>de.m3y.maven</groupId>
+        <artifactId>inject-maven-plugin</artifactId>
+        <configuration>
+          <injections>
+            <injection>
+              <value>${project.version}</value>
+              <pointCut>com.icegreen.greenmail.server.BuildInfo.getProjectVersion</pointCut>
+            </injection>
+          </injections>
+          <includePluginDependencies>true</includePluginDependencies>
+        </configuration>
+    
+        <executions>
+          <execution>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>inject</goal>
+            </goals>
+          </execution>
+        </executions>    
+      </plugin>
+      <plugin>
+		  <groupId>org.codehaus.mojo</groupId>
+		  <artifactId>exec-maven-plugin</artifactId>
+		  <version>1.2.1</version>
+		  <executions>
+		    <execution>
+		      <goals>
+		        <goal>java</goal>
+		      </goals>
+		    </execution>
+		  </executions>
+		  <configuration>
+		    <mainClass>com.icegreen.greenmail.ExternalProxy</mainClass>
+		  </configuration>
+	  </plugin>
+
+    </plugins>
+  </build> 
+  
+    <!-- <build>
+    <plugins>
+      <plugin>
+  <groupId>org.codehaus.mojo</groupId>
+  <artifactId>exec-maven-plugin</artifactId>
+  <version>1.2.1</version>
+  <executions>
+    <execution>
+      <goals>
+        <goal>java</goal>
+      </goals>
+    </execution>
+  </executions>
+  <configuration>
+    <mainClass>com.icegreen.greenmail.ExternalProxy</mainClass>
+  </configuration>
+</plugin>
+    </plugins>
+  </build> -->
+
+</project>
