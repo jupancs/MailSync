@@ -6,7 +6,7 @@ Experiences](http://conferences.sigcomm.org/acm-icn/2018/proceedings/icn18-final
 ## Overview
 
 At the current stage, MailSync is a proof-of-concept application powered by [Named Data Networking (NDN)](https://named-data.net/). 
-MailSync project consists of two applicaitons - a laptop version and an Android version. 
+MailSync project consists of two applications - a laptop version and an Android version. 
 
 - **greenmail-mailsync**: MailSync laptop version
 - **mailsync-android**: MailSync Android version
@@ -66,11 +66,11 @@ Download [NFD](https://play.google.com/store/apps/details?id=net.named_data.nfd)
 
 ### Current Issues
 
-  - IMAP connection sometimes crashes for unknown reason
-  - For the first time a user connects to MailSync on Android, it takes long time to synchronize. The ideal case might be for the first time, MailSync doesn't store all user's emails into database. Only when new emails come in, we store them. 
+  - IMAP connection sometimes crashes for unknown reason.
+  - For the first time a user connects to MailSync on Android, it takes a long time to synchronize. The ideal case might be for the first time, MailSync doesn't store all user's emails into database. Only when new emails come in, we store them. 
   - No retransmission mechanism for NDN which causes the whole synchronization failed if a single email chunk get lost.
-  - No security mechanisms
-  - UI/UX to be improved 
+  - No security mechanisms.
+  - UI/UX to be improved. 
 
 Play it, crash it and report more issues on the **Issue** page. 
 
