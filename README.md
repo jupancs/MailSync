@@ -23,8 +23,8 @@ Download **activation.jar** and **mail.jar** from this website:
 
 Install these two lib locally using Maven:
 
-    * mvn install:install:file -Dfile=/[CHANGE_IT]/activation.jar -DgroupId=javax.activation -DartifactId=activation -Dversion=10.0.0 -Dpackaging=jar
-    * mvn install:install:file -Dfile=/[CHANGE_IT]/mail.jar -DgroupId=com.sun.mail -DartifactId=javax.mail -Dversion=10.0.0 -Dpackaging=jar
+    * mvn install:install-file -Dfile=/[CHANGE IT]/activation.jar -DgroupId=javax.activation -DartifactId=activation -Dversion=10.0.0 -Dpackaging=jar
+    * mvn install:install-file -Dfile=/[CHANGE IT]/mail.jar -DgroupId=com.sun.mail -DartifactId=javax.mail -Dversion=10.0.0 -Dpackaging=jar
 
 Download **Thunderbird** mail client from this website:
 
@@ -66,10 +66,10 @@ Download [NFD](https://play.google.com/store/apps/details?id=net.named_data.nfd)
 
 ### Current Issues
 
-  - IMAP connection sometimes crashes for unknow reason
+  - IMAP connection sometimes crashes for unknown reason
   - For the first time a user connects to MailSync on Android, it takes long time to synchronize. The ideal case might be for the first time, MailSync doesn't store all user's emails into database. Only when new emails come in, we store them. 
-  - No retransmission mechanism for NDN which causes the whole synchronization failed if a sinlge email chunk get lost.
-  - No security mechanims
+  - No retransmission mechanism for NDN which causes the whole synchronization failed if a single email chunk get lost.
+  - No security mechanisms
   - UI/UX to be improved 
 
 Play it, crash it and report more issues on the **Issue** page. 
