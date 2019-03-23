@@ -43,7 +43,6 @@
             android:layout_marginRight="30dp"
             android:backgroundTint="@color/colorPrimary"
             android:hint="Email"
-            android:text="jupan686@gmail.com"
             android:textColor="@color/colorPrimary"
             android:textColorHint="#C0C0C0"
             android:textSize="17sp" />
@@ -67,7 +66,6 @@
             android:backgroundTint="@color/colorPrimary"
             android:hint="Password"
             android:inputType="textPassword"
-            android:text="pjokk19940722"
             android:textColor="@color/colorPrimary"
             android:textSize="17sp" />
 
