@@ -54,8 +54,10 @@ Download [NFD](https://play.google.com/store/apps/details?id=net.named_data.nfd)
 **Configuration:**
 
   1. On Android, configure Gmail client's incoming server to listen to MailSync:
+
     1. Create a brand new email account (performance issue if you use the account containing tons of emails)
     2. Add the account to Gmail client. Click "Other" to add account, manually configure the incoming server to listen to "127.0.0.1", port "3143", security "None". Outgoing server should be "smpt.gmail.com".
+    
   2. On laptop, configure the thunderbird incoming server the same way.
 
 **Actual Testing**
