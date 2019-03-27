@@ -50,22 +50,26 @@ On your Android device, configure your Gmail client incoming server:
 Download [NFD](https://play.google.com/store/apps/details?id=net.named_data.nfd) Android version Google Play store and run it in the background.
 
 ### Testing Steps:
-  1. Run NFD on Android;
-  2. Run MailSync on Android;
-    * Change the default account and password to yours and sign in;
-    * Click the "Clear All" button;
-    * Click the "Run" button;
-  3. Go back to NFD to check if there is a "mailSync" route created;
-  4. Use another email account to send a email to your test account;
-  5. Go back to MailSync, scroll down the screen to load the new email
-  6. Wait for a while to let the app processing email data
-  7. Cut off the Internet and turn on the hotspot (without data usage)
-  8. Connect your laptop to the hotspot you just set up
-  9. Run Thunderbird
-  9. Run MailSync on your laptop, it will fetch emails from Android device automatically
-  10. After the synchronizaiton is done, go to Thunderbird and click the "Get Message" button on top-left corner;
-  11. You should get the email.
 
+**Configuration:**
+
+  1. On Android, configure Gmail client's incoming server to listen to MailSync:
+    1. Create a brand new email account (performance issue if you use the account containing tons of emails)
+    2. Add the account to Gmail client. Click "Other" to add account, manually configure the incoming server to listen to "127.0.0.1", port "3143", security "None". Outgoing server should be "smpt.gmail.com".
+  2. On laptop, configure the thunderbird incoming server the same way.
+
+**Actual Testing**
+
+For now, everytime before sending new emails to Android and then to synchronizing emails between Android and laptop, make sure Android's Gmail and laptop's thunderbird has exactly same emails. On Android click "Run" button on MailSync and go gack to Gmail client, scroll down to make sure you have the most recent emails, then click "Clear ALL". On laptop, run the mailsync script, then go to thunderbird and click "Get Message" to get the latest emails, shut down the mailsync by "Command + C". Now Android and laptop should have same emails. 
+
+1. Run NFD on Android.
+2. Run MailSynn and click "Run" button.
+3. Send a new email (not too large) to your testing account and wait for a while (since there is no notification for completing processing, wait a bit longer say 1 min)
+4. Turn the Android hotspot on, cut off the data connection.
+5. Connect your laptop to the Android hotspot.
+6. Run mailsync script, it will automatically fetching emails from Android after starting up. Wait for a while untill no more stuff coming onto the console.
+7. Click the "Get Message" button on thunderbird.
+8. You should get the email from your phone.
 
 ## Developement
 
