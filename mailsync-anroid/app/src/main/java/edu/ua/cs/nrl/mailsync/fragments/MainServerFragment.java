@@ -211,6 +211,7 @@ public class MainServerFragment extends BaseFragment {
                 }
               }).start();
               stop = !currnetInternetState;
+              if (isAdded()){
               getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -218,7 +219,7 @@ public class MainServerFragment extends BaseFragment {
                     runServerButton.performClick();
 //                  }
                 }
-              });
+              });}
             }
             lastInternetState = currnetInternetState;
             // Sleep for 1000 milliseconds.
@@ -374,12 +375,15 @@ public class MainServerFragment extends BaseFragment {
    * @return
    */
   private boolean isNetworkAvailable() {
-    ConnectivityManager connectivityManager
-        = (ConnectivityManager) getActivity()
-                                .getApplicationContext()
-                                .getSystemService(Context.CONNECTIVITY_SERVICE);
-    NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-    return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    if (isAdded()) {
+      ConnectivityManager connectivityManager
+              = (ConnectivityManager) getActivity()
+              .getApplicationContext()
+              .getSystemService(Context.CONNECTIVITY_SERVICE);
+      NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+      return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+    return false;
   }
 
   private void saveToNdnStorage(String user, String password) {

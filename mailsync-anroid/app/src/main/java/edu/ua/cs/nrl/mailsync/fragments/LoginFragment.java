@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.Toast;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -60,13 +61,15 @@ public class LoginFragment extends BaseFragment {
     email = userEmailEditText.getText().toString();
     password = userPasswordEditText.getText().toString();
 
-    Intent intent = new Intent(getActivity(), MainServerActivity.class);
-    intent.putExtra("EMAIL_ACCOUNT", email);
-    intent.putExtra("EMAIL_PASSWORD", password);
-    startActivity(intent);
+    if (email == null || email.equals("") || password.equals("") || password == null) {
+      Toast.makeText(this.getContext(), "Email or password is empty", Toast.LENGTH_SHORT).show();
+    } else {
+      Intent intent = new Intent(getActivity(), MainServerActivity.class);
+      intent.putExtra("EMAIL_ACCOUNT", email);
+      intent.putExtra("EMAIL_PASSWORD", password);
+      startActivity(intent);
+    }
   }
-
-
 
 
   @Override
