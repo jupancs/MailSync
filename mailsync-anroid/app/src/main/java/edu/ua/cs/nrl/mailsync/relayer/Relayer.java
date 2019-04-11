@@ -1,5 +1,6 @@
 package edu.ua.cs.nrl.mailsync.relayer;
 
+import android.content.Context;
 import android.os.AsyncTask;
 
 import java.net.*;
@@ -13,6 +14,7 @@ import edu.ua.cs.nrl.mailsync.fragments.MainServerFragment;
 
 public class Relayer extends AsyncTask<String, Void, String> {
 
+  private Context context;
   private int serverPort;
 
   private ServerSocket serverSocket;
@@ -30,8 +32,10 @@ public class Relayer extends AsyncTask<String, Void, String> {
   private Thread clientInputThread;
   private Thread googleInputThread;
 
-  public Relayer(int serverPort) {
+  public Relayer(int serverPort, Context context) {
+
     this.serverPort = serverPort;
+    this.context = context;
   }
 
   @Override
@@ -101,6 +105,7 @@ public class Relayer extends AsyncTask<String, Void, String> {
    */
   private void initStreams(boolean handshake) {
     try {
+
       Socket clientSocket = serverSocket.accept();
 
       SSLSocket googleSslSocket =

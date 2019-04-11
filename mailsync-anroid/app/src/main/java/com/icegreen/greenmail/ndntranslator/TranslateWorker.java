@@ -1,6 +1,9 @@
 package com.icegreen.greenmail.ndntranslator;
 
 import android.content.Context;
+import android.os.Handler;
+import android.support.v4.app.FragmentActivity;
+import android.widget.Toast;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.DataSource;
@@ -41,7 +44,7 @@ import edu.ua.cs.nrl.mailsync.fragments.MainServerFragment;
 
 public class TranslateWorker {
 
-  public static void start(MimeMessage mimeMessage, Context context) throws
+  public static void start(MimeMessage mimeMessage, Context context, final FragmentActivity mainActivity) throws
       FolderException, IOException, CouchbaseLiteException, MessagingException {
     // Initialize IMAP-to-NDN translators
     NdnTranslator ndnTranslator = TranslatorFactory.getNdnTranslator("IMAP", context);
@@ -178,6 +181,15 @@ public class TranslateWorker {
       byte[] result = encoding.getImmutableArray();
 
       ndnTranslator.saveData(mimeMessageName + "/v" + i, result, "MimeMessage");
+
     }
+    Handler h = new Handler(mainActivity.getApplicationContext().getMainLooper());
+
+    h.post(new Runnable() {
+      @Override
+      public void run() {
+        Toast.makeText(mainActivity, "Saved", Toast.LENGTH_SHORT).show();
+      }
+    });
   }
 }

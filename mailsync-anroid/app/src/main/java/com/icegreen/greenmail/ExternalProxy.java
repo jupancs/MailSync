@@ -1,6 +1,7 @@
 package com.icegreen.greenmail;
 
 import android.content.Context;
+import android.support.v4.app.FragmentActivity;
 
 import java.io.*;
 import java.util.*;
@@ -30,6 +31,8 @@ public class ExternalProxy {
   public static Object monitor = new Object();
 
   public static Context context;
+
+  public static FragmentActivity mainActivity;
 
   public static int getSelectedProxy() {
     if (proxySelection == 0) {
@@ -125,9 +128,14 @@ public class ExternalProxy {
     gmail.setUser(email, email, password);
   }
 
+  public static void setMainActivity(FragmentActivity activity){
+    mainActivity = activity;
+  }
+
   public static void main(String argv[]) {
     setUser(userEmail, userPassword);
     setSelectedProxy(proxySelection);
+    setMainActivity(mainActivity);
     gmail.start();
     ndnMailSyncOneThread.start();
     System.out.println("Finish starting Server. :)");

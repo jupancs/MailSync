@@ -2,6 +2,10 @@ package com.icegreen.greenmail.ndntranslator;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+import android.support.v4.app.FragmentActivity;
+import android.widget.Toast;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.google.common.io.BaseEncoding;
@@ -107,10 +111,15 @@ public class ImapToNdnTranslator extends BaseFragment implements NdnTranslator {
     return nameBuilder.toString();
   }
 
+
   @Override
   public void saveData(String name, byte[] content, String databaseName)
       throws CouchbaseLiteException {
     ndnDBConnection.saveNDNData(name, content, databaseName);
+
+
+    final Context act = this.getActivity();
+
   }
 
   // Encoding helper method

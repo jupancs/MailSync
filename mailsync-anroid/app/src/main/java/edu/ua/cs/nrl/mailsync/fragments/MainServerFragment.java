@@ -158,10 +158,13 @@ public class MainServerFragment extends BaseFragment {
     userEmail = intent.getExtras().getString("EMAIL_ACCOUNT");
     userPassword = intent.getExtras().getString("EMAIL_PASSWORD");
 
+
     ndnDBConnection = NdnDBConnectionFactory.getDBConnection(
         "couchbaseLite",
         getContext().getApplicationContext()
     );
+
+    ndnDBConnection.setFragmentActivity(this.getActivity());
 
     StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
     StrictMode.setThreadPolicy(policy);
@@ -178,6 +181,7 @@ public class MainServerFragment extends BaseFragment {
 
     new Thread(new Runnable() {
       public void run() {
+
         while (true) {
           try {
             boolean currnetInternetState = isNetworkAvailable();
@@ -265,6 +269,8 @@ public class MainServerFragment extends BaseFragment {
     ExternalProxy.setUser(userEmail, userPassword);
     ExternalProxy.setSelectedProxy(2);
 
+    ExternalProxy.setMainActivity(getActivity());
+
     if (isNetworkAvailable()) {
       hasInternetBefore = true;
 //      ExternalProxy.gmail.stop();
@@ -279,7 +285,7 @@ public class MainServerFragment extends BaseFragment {
       System.out.println("Network available");
 
       // Start the relayer service
-      relayer = new Relayer(3143);
+      relayer = new Relayer(3143, getContext());
       relayer.execute(new String[]{""});
 
       if (!isFirstTime) {
@@ -302,6 +308,7 @@ public class MainServerFragment extends BaseFragment {
       new Thread(new Runnable() {
         public void run() {
           ExternalProxy.gmail.start();
+
 //          fetchFromInternet(userEmail, userPassword);
         }
       }).start();
@@ -375,7 +382,9 @@ public class MainServerFragment extends BaseFragment {
    * @return
    */
   private boolean isNetworkAvailable() {
+
     if (isAdded()) {
+
       ConnectivityManager connectivityManager
               = (ConnectivityManager) getActivity()
               .getApplicationContext()
@@ -452,7 +461,8 @@ public class MainServerFragment extends BaseFragment {
             MimeMessage mimeMessage = (MimeMessage) messages[j];
             NdnFolder.messgeID.add(0, mimeMessage.getMessageID());
             System.out.println("size: " + j);
-            TranslateWorker.start(mimeMessage, getContext());
+            TranslateWorker.start(mimeMessage, getContext(),getActivity());
+
           }
           msgSize = mailboxSize;
           i++;
@@ -460,7 +470,7 @@ public class MainServerFragment extends BaseFragment {
           MimeMessage mimeMessage = (MimeMessage) messages[i];
           NdnFolder.messgeID.add(mimeMessage.getMessageID());
           System.out.println("Normallllllllllll size: " + i);
-          TranslateWorker.start(mimeMessage, getContext());
+          TranslateWorker.start(mimeMessage, getContext(),getActivity());
         }
         if (msgSize - i <= LIMIT) {
           i--;

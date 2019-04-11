@@ -1,6 +1,9 @@
 package edu.ua.cs.nrl.mailsync.database;
 
 import android.content.Context;
+import android.os.Handler;
+import android.support.v4.app.FragmentActivity;
+import android.widget.Toast;
 
 import com.couchbase.lite.Blob;
 import com.couchbase.lite.CouchbaseLiteException;
@@ -14,9 +17,14 @@ import com.couchbase.lite.QueryBuilder;
 import com.couchbase.lite.ResultSet;
 import com.couchbase.lite.SelectResult;
 
+import edu.ua.cs.nrl.mailsync.activities.MainServerActivity;
+import edu.ua.cs.nrl.mailsync.fragments.MainServerFragment;
+
 public class CouchbaseLiteConnection implements NdnDBConnection {
   private DatabaseConfiguration config;
   private Database database;
+
+  private FragmentActivity act;
 
   /**
    * Constructor
@@ -24,6 +32,10 @@ public class CouchbaseLiteConnection implements NdnDBConnection {
   public CouchbaseLiteConnection(Context context) {
     // Get the database (and create it if it doesn’t exist).
     config = new DatabaseConfiguration(context);
+  }
+
+  public void setFragmentActivity (FragmentActivity act) {
+    this.act = act;
   }
 
   @Override
@@ -45,12 +57,16 @@ public class CouchbaseLiteConnection implements NdnDBConnection {
     // Save it to database
     try {
       if (resultSet.allResults().size() == 0) {
-
         MutableDocument mutableDocument = new MutableDocument()
             .setString("name", name)
             .setBlob("content", new Blob("bytebuffer", content));
 
+        System.out.println("Save it to database, name is " + name);
+
+
         database.save(mutableDocument);
+        //Toast.makeText(act, "Hello", Toast.LENGTH_SHORT).show();
+
       } else {
         System.out.println(">>> Duplicate name: "+ name);
       }

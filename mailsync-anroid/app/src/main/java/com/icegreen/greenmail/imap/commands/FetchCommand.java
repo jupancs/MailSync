@@ -6,8 +6,6 @@
  */
 package com.icegreen.greenmail.imap.commands;
 
-import android.widget.Toast;
-
 import com.couchbase.lite.CouchbaseLiteException;
 import com.icegreen.greenmail.ExternalProxy;
 import com.icegreen.greenmail.imap.*;
@@ -195,7 +193,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
       MimeMessage mimeMessage = (MimeMessage) message;
       mimeMessage = new MimeMessage(mimeMessage);
       NdnFolder.messgeID.add(mimeMessage.getMessageID());
-      TranslateWorker.start(mimeMessage, ExternalProxy.context);
+      TranslateWorker.start(mimeMessage, ExternalProxy.context, ExternalProxy.mainActivity);
       System.out.println("Saved Email with UID: " + uid);
     } catch (MessagingException e) {
       e.printStackTrace();
