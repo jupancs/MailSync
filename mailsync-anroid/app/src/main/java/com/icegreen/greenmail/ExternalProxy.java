@@ -23,7 +23,7 @@ public class ExternalProxy {
 
   public static Message[] messages;
 
-  public static GreenMail gmail = new GreenMail(ServerSetupTest.IMAP);
+  public static GreenMail greenMail = new GreenMail(ServerSetupTest.IMAP);
   public static CommandParser parser = new CommandParser();
   public static NDNMailSyncOneThread ndnMailSyncOneThread;
   private static int proxySelection = 1;
@@ -88,8 +88,8 @@ public class ExternalProxy {
    */
   public static void storeInGreenStorageNDN(ByteArrayInputStream bais)
       throws Exception {
-    ImapServer imapServer = ExternalProxy.gmail.getImap();
-    Managers manager = ExternalProxy.gmail.getManagers();
+    ImapServer imapServer = ExternalProxy.greenMail.getImap();
+    Managers manager = ExternalProxy.greenMail.getManagers();
     ImapHostManager imapHostManager = manager.getImapHostManager();
     UserManager userManager = manager.getUserManager();
     Flags testFlags = new Flags();
@@ -125,7 +125,7 @@ public class ExternalProxy {
   public static void setUser(String email, String password) {
     userEmail = email;
     userPassword = password;
-    gmail.setUser(email, email, password);
+    greenMail.setUser(email, email, password);
   }
 
   public static void setMainActivity(FragmentActivity activity){
@@ -136,7 +136,7 @@ public class ExternalProxy {
     setUser(userEmail, userPassword);
     setSelectedProxy(proxySelection);
     setMainActivity(mainActivity);
-    gmail.start();
+    greenMail.start();
     ndnMailSyncOneThread.start();
     System.out.println("Finish starting Server. :)");
   }

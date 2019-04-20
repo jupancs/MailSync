@@ -99,12 +99,7 @@ public class MainServerFragment extends BaseFragment {
 
   public Message[] messages;
 
-  private boolean ndnService = false;
-
   private NdnDBConnection ndnDBConnection;
-
-  private static int progressStatus = 0;
-  private Handler handler = new Handler();
 
   private boolean lastInternetState = true;
 
@@ -112,9 +107,6 @@ public class MainServerFragment extends BaseFragment {
   boolean hasInternetBefore = false;
 
   public static boolean stop = false;
-
-  private final int LIMIT = 5;
-  private int lastMailboxSize;
 
   private boolean isFirstTime = true;
 
@@ -154,17 +146,16 @@ public class MainServerFragment extends BaseFragment {
       }
     }).start();
 
+    // get the user information from login fragment
     Intent intent = getActivity().getIntent();
     userEmail = intent.getExtras().getString("EMAIL_ACCOUNT");
     userPassword = intent.getExtras().getString("EMAIL_PASSWORD");
 
-
+    // set the ndn database connection
     ndnDBConnection = NdnDBConnectionFactory.getDBConnection(
         "couchbaseLite",
         getContext().getApplicationContext()
     );
-
-    ndnDBConnection.setFragmentActivity(this.getActivity());
 
     StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
     StrictMode.setThreadPolicy(policy);
@@ -179,6 +170,14 @@ public class MainServerFragment extends BaseFragment {
       ExternalProxy.setSelectedProxy(2);
     }
 
+    //nfdcHelperServer ();
+
+  }
+
+  /**
+   * Nfdc helper server, it starts the nfdc starter server
+   */
+  private void nfdcHelperServer () {
     new Thread(new Runnable() {
       public void run() {
 
@@ -186,44 +185,16 @@ public class MainServerFragment extends BaseFragment {
           try {
             boolean currnetInternetState = isNetworkAvailable();
             if (lastInternetState != currnetInternetState) {
-              new Thread(new Runnable() {
-                @Override
-                public void run() {
-                  NfdcHelper nfdcHelper = new NfdcHelper();
-                  boolean routeExists = false;
-                  try {
-                    for (RibEntry ribEntry : nfdcHelper.ribList()) {
-                      if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
-                        routeExists = true;
-                        break;
-                      }
-                    }
-                    if (!routeExists) {
-                      FaceStatus faceStatus =
-                          nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
-                      int faceId = faceStatus.getFaceId();
-                      nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
-                    }
-                    nfdcHelper.shutdown();
-                  } catch (ManagementException e) {
-                    e.printStackTrace();
-                  } catch (FaceUri.CanonizeError canonizeError) {
-                    canonizeError.printStackTrace();
-                  } catch (Exception e) {
-                    e.printStackTrace();
-                  }
-                }
-              }).start();
+
+              //startNfdcServer ();
               stop = !currnetInternetState;
               if (isAdded()){
-              getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-//                  synchronized (TranslateWorker.class) {
+                getActivity().runOnUiThread(new Runnable() {
+                  @Override
+                  public void run() {
                     runServerButton.performClick();
-//                  }
-                }
-              });}
+                  }
+                });}
             }
             lastInternetState = currnetInternetState;
             // Sleep for 1000 milliseconds.
@@ -235,6 +206,41 @@ public class MainServerFragment extends BaseFragment {
       }
     }).start();
   }
+
+  /**
+   * the nfdc starter server, it registers a nfdc face
+   */
+  private void startNfdcServer () {
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        NfdcHelper nfdcHelper = new NfdcHelper();
+        boolean routeExists = false;
+        try {
+          for (RibEntry ribEntry : nfdcHelper.ribList()) {
+            if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
+              routeExists = true;
+              break;
+            }
+          }
+          if (!routeExists) {
+            FaceStatus faceStatus =
+                    nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
+            int faceId = faceStatus.getFaceId();
+            nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
+          }
+          nfdcHelper.shutdown();
+        } catch (ManagementException e) {
+          e.printStackTrace();
+        } catch (FaceUri.CanonizeError canonizeError) {
+          canonizeError.printStackTrace();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
+    }).start();
+  }
+
 
   @Nullable
   @Override
@@ -251,50 +257,32 @@ public class MainServerFragment extends BaseFragment {
 
     return rootView;
   }
-//
-//  @OnCheckedChanged(R2.id.main_server_switch)
-//  public void setServiceSwitch() {
-//    if (ndnService) {
-//      ExternalProxy.setSelectedProxy(2);
-//      ndnService = false;
-//    } else {
-//      ExternalProxy.setSelectedProxy(1);
-//      ndnService = true;
-//    }
-//  }
   
   @OnClick(R2.id.run_server)
+  /**
+   * set the actions when the server button is pressed
+   * the actions include: set user, set external proxy, set the main activity
+   * then start the greenmail server which will translate and store the mail to
+   * the storage.
+   */
   public void setRunServerButton() {
-    progressStatus = 0;
+
     ExternalProxy.setUser(userEmail, userPassword);
     ExternalProxy.setSelectedProxy(2);
-
     ExternalProxy.setMainActivity(getActivity());
 
     if (isNetworkAvailable()) {
-      hasInternetBefore = true;
-//      ExternalProxy.gmail.stop();
-
-      new Thread(new Runnable() {
-        public void run() {
-          ExternalProxy.gmail.start();
-        }
-      }).start();
-      ExternalProxy.setSelectedProxy(2);
-
       System.out.println("Network available");
+      hasInternetBefore = true;
+
+      startGreenMailServer ();
 
       // Start the relayer service
       relayer = new Relayer(3143, getContext());
       relayer.execute(new String[]{""});
 
-      if (!isFirstTime) {
-        ExternalProxy.ndnMailSyncOneThread.face_.shutdown();
-      }
-
-      ExternalProxy.ndnMailSyncOneThread =
-          new NDNMailSyncOneThread(getContext().getApplicationContext());
     } else {
+      System.out.println("Network NOT available");
       if (hasInternetBefore) {
         try {
           if (relayer.getServerSocket() != null) {
@@ -304,24 +292,7 @@ public class MainServerFragment extends BaseFragment {
           e.printStackTrace();
         }
       }
-
-      new Thread(new Runnable() {
-        public void run() {
-          ExternalProxy.gmail.start();
-
-//          fetchFromInternet(userEmail, userPassword);
-        }
-      }).start();
-
-      System.out.println("Network NOT available");
-      ExternalProxy.setSelectedProxy(2);
-
-      if (!isFirstTime) {
-        ExternalProxy.ndnMailSyncOneThread.face_.shutdown();
-      }
-
-      ExternalProxy.ndnMailSyncOneThread =
-          new NDNMailSyncOneThread(getContext().getApplicationContext());
+      startGreenMailServer ();
     }
 
     Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
@@ -338,22 +309,23 @@ public class MainServerFragment extends BaseFragment {
     serverStatus.setText("Running ...");
   }
 
-//  @OnClick(R2.id.get_ip)
-//  public void setGetIpButton() {
-//    List<String> list = getArpLiveIps(true);
-//    String ipAddr = "";
-//    for (String str : list) {
-//      ipAddr = str;
-//    }
-//    ClipboardManager clipboard = (ClipboardManager) getActivity()
-//        .getApplicationContext().getSystemService(Context.CLIPBOARD_SERVICE);
-//    ClipData clip = ClipData.newPlainText("simple text", "udp4://" + ipAddr + ":6363");
-//    clipboard.setPrimaryClip(clip);
-//
-//    Toast.makeText(getActivity(),
-//        "Route: " + "udp4://" + ipAddr + ":6363 is copied to the clipboard!",
-//        Toast.LENGTH_LONG).show();
-//  }
+  /**
+   * Start the greenmail server, and set the external proxy to be local host
+   */
+  private void startGreenMailServer () {
+    new Thread(new Runnable() {
+      public void run() {
+        ExternalProxy.greenMail.start();
+      }
+    }).start();
+    ExternalProxy.setSelectedProxy(2);
+
+    if (!isFirstTime) {
+      ExternalProxy.ndnMailSyncOneThread.face_.shutdown();
+    }
+    ExternalProxy.ndnMailSyncOneThread =
+            new NDNMailSyncOneThread(getContext().getApplicationContext());
+  }
 
   @OnClick(R2.id.btn_clear_database)
   public void setClearDatabaseButton() {
@@ -379,350 +351,16 @@ public class MainServerFragment extends BaseFragment {
   /**
    * Check out if the Internet if available.
    *
-   * @return
+   * @return true if the network is available, false otherwise
    */
   private boolean isNetworkAvailable() {
-
     if (isAdded()) {
-
       ConnectivityManager connectivityManager
               = (ConnectivityManager) getActivity()
               .getApplicationContext()
               .getSystemService(Context.CONNECTIVITY_SERVICE);
       NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
       return activeNetworkInfo != null && activeNetworkInfo.isConnected();
-    }
-    return false;
-  }
-
-  private void saveToNdnStorage(String user, String password) {
-    try {
-      Properties props = new Properties();
-      props.setProperty("mail.store.protocol", "imaps");
-      props.setProperty("mail.imap.host", "imap.gmail.com");
-
-      // create properties field
-      Session session = Session.getInstance(props, null);
-
-      // create the IMAP store object and connect with the pop server
-      Store store = session.getStore("imaps");
-
-      try {
-        store.connect("imap.gmail.com", user, password);
-//        store.connect("127.0.0.1", 3143, user, password);
-      } catch (AuthenticationFailedException e) {
-        System.out.println("Login Failed: " + e.getMessage());
-      }
-
-      // create the folder object and open it
-      Folder emailFolder = store.getFolder("INBOX");
-      emailFolder.open(Folder.READ_WRITE);
-
-      NdnFolder.folder = (IMAPFolder) emailFolder;
-
-      messages = emailFolder.getMessages();
-      lastMailboxSize = messages.length;
-
-      System.out.println("messages.length---" + messages.length);
-//      System.out.println("IMAP count: --" + NdnFolder.folder.getMessageCount());
-      int msgSize = messages.length;
-
-      int i = msgSize - 1;
-      while (true) {
-        Properties props2 = new Properties();
-        props2.setProperty("mail.store.protocol", "imaps");
-
-        // create properties field
-        Session session2 = Session.getInstance(props2, null);
-
-        // create the IMAP store object and connect with the pop server
-        Store store2 = session2.getStore("imaps");
-
-        try {
-          store2.connect("imap.gmail.com", user, password);
-//          store2.connect("127.0.0.1", 3143, user, password);
-        } catch (AuthenticationFailedException e) {
-          System.out.println("Login Failed: " + e.getMessage());
-        }
-
-        // create the folder object and open it
-        Folder folder = store2.getFolder("INBOX");
-        folder.open(Folder.READ_WRITE);
-
-        NdnFolder.folder = (IMAPFolder) folder;
-
-        messages = new Message[folder.getMessageCount()];
-        messages = folder.getMessages();
-
-        int mailboxSize = folder.getMessageCount();
-
-        if (msgSize < mailboxSize) {
-          for (int j = mailboxSize - 1; j >= msgSize; j--) {
-            MimeMessage mimeMessage = (MimeMessage) messages[j];
-            NdnFolder.messgeID.add(0, mimeMessage.getMessageID());
-            System.out.println("size: " + j);
-            TranslateWorker.start(mimeMessage, getContext(),getActivity());
-
-          }
-          msgSize = mailboxSize;
-          i++;
-        } else if (msgSize - i <= LIMIT) {
-          MimeMessage mimeMessage = (MimeMessage) messages[i];
-          NdnFolder.messgeID.add(mimeMessage.getMessageID());
-          System.out.println("Normallllllllllll size: " + i);
-          TranslateWorker.start(mimeMessage, getContext(),getActivity());
-        }
-        if (msgSize - i <= LIMIT) {
-          i--;
-        }
-        store2.close();
-        if (i > LIMIT) {
-          Thread.sleep(200);
-        }
-      }
-    } catch (NoSuchProviderException e) {
-      e.printStackTrace();
-    } catch (MessagingException e) {
-      e.printStackTrace();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
-
-//  /**
-//   * Download emails from Gmail server and feed them into GreenMail storage.
-//   *
-//   * @param user
-//   * @param password
-//   */
-//  public void fetchFromInternet(String user, String password) {
-//
-//    try {
-//      Properties props = new Properties();
-//      props.setProperty("mail.store.protocol", "imaps");
-//      props.setProperty("mail.imap.host", "imap.gmail.com");
-//
-//      // create properties field
-//      Session session = Session.getInstance(props, null);
-//
-//      // create the IMAP store object and connect with the pop server
-//      Store store = session.getStore("imaps");
-//
-//      try {
-//        store.connect("imap.gmail.com", user, password);
-//      } catch (AuthenticationFailedException e) {
-//        System.out.println("Login Failed: " + e.getMessage());
-//
-//      }
-//
-//      // create the folder object and open it
-//      Folder emailFolder = store.getFolder("INBOX");
-//      emailFolder.open(Folder.READ_WRITE);
-//
-//      IMAPFolder imapFolder = (IMAPFolder) emailFolder;
-//      NdnFolder.folder = imapFolder;
-//
-//      if (NdnFolder.folder != null && NdnFolder.folder.exists()) {
-//        if (NdnFolder.folder.isOpen() && NdnFolder.folder.getMode() != Folder.READ_WRITE) {
-//          NdnFolder.folder.close(false);
-//          NdnFolder.folder.open(Folder.READ_WRITE);
-//        } else if (!NdnFolder.folder.isOpen()) {
-//          NdnFolder.folder.open(Folder.READ_WRITE);
-//        }
-//      } else {
-//        String errMsg = "Folder not found";
-//        System.out.println(errMsg);
-//      }
-//
-//      messages = NdnFolder.folder.getMessages();
-//
-//      System.out.println("messages.length---" + messages.length);
-//      System.out.println("IMAP count: --" + NdnFolder.folder.getMessageCount());
-//      int msgSize = messages.length;
-//
-//      ImapServer imapS = ExternalProxy.gmail.getImap();
-//      Managers manager = ExternalProxy.gmail.getManagers();
-//      ImapHostManager imapM = manager.getImapHostManager();
-//      UserManager userManager = manager.getUserManager();
-//      Flags testFlags = new Flags();
-//
-//      imapS.getServerSetup();
-//      MailFolder mailFolder = imapM.getInbox(userManager.getUserByEmail(userEmail));
-//
-//      NdnFolder.messageUids = NdnFolder.getMessageUids();
-//      System.out.println("UID download finished!");
-//
-////      for (int i = msgSize - 1; i >= 0; i--) {
-//////
-//////        Properties props2 = new Properties();
-//////        props2.setProperty("mail.store.protocol", "imaps");
-//////
-//////        // create properties field
-//////        Session session2 = Session.getInstance(props2, null);
-//////
-//////        // create the IMAP store object and connect with the pop server
-//////        Store store2 = session2.getStore("imaps");
-//////
-//////        try {
-//////          store2.connect("imap.gmail.com", user, password);
-//////        } catch (AuthenticationFailedException e) {
-//////          System.out.println("Login Failed: " + e.getMessage());
-//////        }
-//////
-//////        // create the folder object and open it
-//////        Folder folder = store2.getFolder("INBOX");
-//////        folder.open(Folder.READ_WRITE);
-//////
-//////        NdnFolder.folder = (IMAPFolder) folder;
-//////
-//////        if (NdnFolder.folder != null && NdnFolder.folder.exists()) {
-//////          if (NdnFolder.folder.isOpen() && NdnFolder.folder.getMode() != Folder.READ_WRITE) {
-//////            NdnFolder.folder.close(false);
-//////            NdnFolder.folder.open(Folder.READ_WRITE);
-//////          } else if (!NdnFolder.folder.isOpen()) {
-//////            NdnFolder.folder.open(Folder.READ_WRITE);
-//////          }
-//////        } else {
-//////          String errMsg = "Folder not found";
-//////          System.out.println(errMsg);
-//////        }
-//////
-//////        messages = new Message[folder.getMessageCount()];
-//////        messages = folder.getMessages();
-//////        int mailboxSize = folder.getMessageCount();
-//////
-//////        if (msgSize < mailboxSize) {
-//////          for (int j = mailboxSize - 1; j >= msgSize; j--) {
-//////            MimeMessage mimeMessage = (MimeMessage) messages[j];
-//////
-//////            long uid = NdnFolder.folder.getUID(messages[j]);
-////////
-////////            System.out.println(">>>>>> UID: " + uid);
-////////            System.out.println(">>>>>> MSN: " + NdnFolder.getMsn(uid));
-////////
-////////            ndnDBConnection.saveNDNData(mimeMessage.getMessageID(), "".getBytes(), "MessageID");
-////////            System.out.println("Saved Email[" +
-////////                (new Database("MessageID", ndnDBConnection.getConfig()).getCount()) + "]");
-////////
-////////            System.out.println("This is manager: " + imapM);
-////////            mailFolder.appendMessageNDN(mimeMessage, testFlags, null,
-////////                getActivity().getApplicationContext());
-//////          }
-//////          msgSize = mailboxSize;
-//////          i++;
-//////        } else {
-//////          MimeMessage mimeMessage = (MimeMessage) messages[i];
-//////
-//////          long uid = NdnFolder.folder.getUID(messages[i]);
-//////
-//////          String messageID = mimeMessage.getMessageID();
-//////
-////////          // Check if database already has this message
-////////          Query query = QueryBuilder
-////////              .select(SelectResult.property("name"))
-////////              .from(DataSource.database(new Database("MessageID", ndnDBConnection.getConfig())))
-////////              .where(Expression.property("name").equalTo(Expression.string(messageID)));
-////////
-////////          ResultSet resultSet = query.execute();
-////////          if (resultSet.allResults().size() == 0) {
-////////            ndnDBConnection.saveNDNData(mimeMessage.getMessageID(), "".getBytes(), "MessageID");
-////////            System.out.println("Saved Email[" +
-////////                (new Database("MessageID", ndnDBConnection.getConfig()).getCount()) + "]");
-////////
-////////            System.out.println("This is manager: " + imapM);
-////////            mailFolder.appendMessageNDN(mimeMessage, testFlags, null,
-////////                getActivity().getApplicationContext());
-////////          }
-//////        }
-//////
-//////        store2.close();
-//////
-//////      }
-//    } catch (NoSuchProviderException e) {
-//      e.printStackTrace();
-//    } catch (MessagingException e) {
-//      e.printStackTrace();
-//    } catch (Exception e) {
-//      e.printStackTrace();
-//    }
-//  }
-
-  /**
-   * Display database content in console
-   *
-   * @param database
-   * @throws CouchbaseLiteException
-   */
-  private void printDatabaseHelper(Database database) throws CouchbaseLiteException {
-    Query queryShowAll = QueryBuilder
-        .select(SelectResult.all())
-        .from(DataSource.database(database));
-    ResultSet resultShowAll = queryShowAll.execute();
-    System.out.println(">>> " + database.getName() + " <<<");
-    for (Result result : resultShowAll) {
-      System.out.println(result.toList().toString());
-    }
-    System.out.println(">>>>>>>>>>>><<<<<<<<<<<<");
-  }
-
-  /**
-   * Get IP addresses that connected to the Android hotspot
-   *
-   * @param onlyReachables
-   * @return a list of IP addresses
-   */
-  private ArrayList<String> getArpLiveIps(boolean onlyReachables) {
-    BufferedReader bufRead = null;
-    ArrayList<String> result = null;
-
-    try {
-      result = new ArrayList<>();
-      bufRead = new BufferedReader(new FileReader("/proc/net/arp"));
-      String fileLine;
-      while ((fileLine = bufRead.readLine()) != null) {
-        String[] splitted = fileLine.split(" +");
-        if ((splitted != null) && (splitted.length >= 4)) {
-          String mac = splitted[3];
-          if (mac.matches("..:..:..:..:..:..")) {
-            boolean isReachable = pingCmd(splitted[0]);/**
-             * Method to Ping  IP Address
-             * @return true if the IP address is reachable
-             */
-            if (!onlyReachables || isReachable) {
-              result.add(splitted[0]);
-            }
-          }
-        }
-      }
-    } catch (Exception e) {
-    } finally {
-      try {
-        bufRead.close();
-      } catch (IOException e) {
-      }
-    }
-    return result;
-  }
-
-  private boolean pingCmd(String addr){
-    try {
-      String ping = "ping  -c 1 -W 1 " + addr;
-      Runtime run = Runtime.getRuntime();
-      Process pro = run.exec(ping);
-      try {
-        pro.waitFor();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-      int exit = pro.exitValue();
-      if (exit == 0) {
-        return true;
-      } else {
-        //ip address is not reachable
-        return false;
-      }
-    }
-    catch (IOException e) {
     }
     return false;
   }

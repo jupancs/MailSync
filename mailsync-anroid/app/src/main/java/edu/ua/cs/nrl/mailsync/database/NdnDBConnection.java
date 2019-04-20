@@ -10,8 +10,6 @@ import java.util.List;
 
 public interface NdnDBConnection {
 
-
-  void setFragmentActivity(FragmentActivity act);
   /**
    * Save name-data into database on Android
    *

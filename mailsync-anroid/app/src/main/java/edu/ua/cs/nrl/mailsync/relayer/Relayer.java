@@ -111,9 +111,6 @@ public class Relayer extends AsyncTask<String, Void, String> {
       SSLSocket googleSslSocket =
           (SSLSocket) SSLSocketFactory.getDefault().createSocket("imap.gmail.com", 993);
 
-//      SSLSocket greenSslSocket =
-//          (SSLSocket) SSLSocketFactory.getDefault().createSocket("127.0.0.1", 3144);
-
       Socket socket = new Socket("127.0.0.1", 3144);
 
       if (!handshake) {
@@ -171,7 +168,6 @@ public class Relayer extends AsyncTask<String, Void, String> {
       fakeBuffer = Arrays.copyOf(buffer, buffer.length);
       out.write(buffer, 0, len);
       outToGreen.write(fakeBuffer, 0, len);
-//      System.out.println("Client >>> " + new String(buffer));
     }
     System.out.println("-----------------------------------");
   }
@@ -183,9 +179,5 @@ public class Relayer extends AsyncTask<String, Void, String> {
    */
   public ServerSocket getServerSocket() {
     return serverSocket;
-  }
-
-  public void closeThread() {
-
   }
 }

@@ -24,18 +24,12 @@ public class CouchbaseLiteConnection implements NdnDBConnection {
   private DatabaseConfiguration config;
   private Database database;
 
-  private FragmentActivity act;
-
   /**
    * Constructor
    */
   public CouchbaseLiteConnection(Context context) {
     // Get the database (and create it if it doesn’t exist).
     config = new DatabaseConfiguration(context);
-  }
-
-  public void setFragmentActivity (FragmentActivity act) {
-    this.act = act;
   }
 
   @Override
@@ -65,7 +59,6 @@ public class CouchbaseLiteConnection implements NdnDBConnection {
 
 
         database.save(mutableDocument);
-        //Toast.makeText(act, "Hello", Toast.LENGTH_SHORT).show();
 
       } else {
         System.out.println(">>> Duplicate name: "+ name);
