@@ -24,7 +24,7 @@ public class TranslateWorker {
      */
     String attributeName = attributeTranslator.generateAttributeName(
         "mailSync",
-        "emailsynctest1@gmail.com",
+        ExternalProxy.userEmail,
         "inbox",
         "1",
         String.valueOf(storedMessage.getMimeMessage().getMessageID())
@@ -44,7 +44,7 @@ public class TranslateWorker {
     ImapHostManager imapHostManager = manager.getImapHostManager();
     UserManager userManager = manager.getUserManager();
     MailFolder mailFolder = imapHostManager
-            .getInbox(userManager.getUserByEmail("emailsynctest1@gmail.com"));
+            .getInbox(userManager.getUserByEmail(ExternalProxy.userEmail));
 
     Snapshot snapshot = new Snapshot(0);
     snapshot.flags = MessageFlags.format(mailFolder.getPermanentFlags());
@@ -62,7 +62,7 @@ public class TranslateWorker {
 
     String mailFolderName = mailFolderTranslator.generateMailFolderName(
         "mailSync",
-        "emailsynctest1@gmail.com",
+        ExternalProxy.userEmail,
         "inbox",
         "1",
         String.valueOf(storedMessage.getUid())
@@ -77,7 +77,7 @@ public class TranslateWorker {
      */
     String mimeMessageName = mimeMessageTranslator.generateMimeMessageName(
         "mailSync",
-        "emailsynctest1@gmail.com",
+        ExternalProxy.userEmail,
         "inbox",
         "1",
         String.valueOf(storedMessage.getMimeMessage().getMessageID())
