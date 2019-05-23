@@ -1,10 +1,13 @@
 package com.icegreen.greenmail.ndnproxy;
 
 import android.content.Context;
+import android.util.Base64;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import net.named_data.jndn.Data;
@@ -31,9 +34,11 @@ import com.couchbase.lite.ResultSet;
 import com.couchbase.lite.SelectResult;
 
 import com.icegreen.greenmail.ExternalProxy;
+import com.icegreen.greenmail.ndntranslator.TranslateWorker;
 
 import edu.ua.cs.nrl.mailsync.database.NdnDBConnection;
 import edu.ua.cs.nrl.mailsync.database.NdnDBConnectionFactory;
+
 
 public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
     OnInterestCallback, OnRegisterFailed {
@@ -51,6 +56,8 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
 
   public static Snapshot mailFolder;
   private Context context;
+
+  public String probeSizeStr;
 
   public NDNMailSyncConsumerProducer(KeyChain keyChain, Name certificateName, Context context) {
     keyChain_ = keyChain;
@@ -138,21 +145,36 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
 
     } else {
       long queryStartTime = System.nanoTime();
-      if (adu.equals("MailFolder")) {
+      if (adu.equals("probe")) {
+        System.out.println("---------------------------------");
+        System.out.println("ProbeSize: " + TranslateWorker.probeSize);
+        System.out.println("---------------------------------");
+        probeSizeStr = String.valueOf(TranslateWorker.probeSize);
+        try {
+          contentByte = ByteBuffer.wrap(probeSizeStr.getBytes("UTF-8")).array();
+        } catch (UnsupportedEncodingException e) {
+          e.printStackTrace();
+        }
+      } else if (adu.equals("MailFolder")) {
         try {
           String nameUri = name.toString();
           String[] arr = nameUri.replaceFirst("^/", "").split("/");
 
           StringBuilder keyBuilder = new StringBuilder();
-          keyBuilder.append("/mailSync/").append(arr[1]);
+          keyBuilder.append("/mailSync/").append(arr[1]).append("/").append(arr[6]);
 
           System.out.println("arr[1] ==> " + keyBuilder.toString());
-          System.out.println("name ==> " + name.toString());
+          System.out.println("name ==> " + name.toUri());
 
           Query mailFolderQuery = QueryBuilder
               .select(SelectResult.property("content"))
               .from(DataSource.database(new Database("MailFolder", ndnDBConnection.getConfig())))
               .where(Expression.property("name").like(Expression.string(keyBuilder.toString() + "%")));
+//          Query mailFolderQuery = QueryBuilder
+//              .select(SelectResult.property("content"))
+//              .from(DataSource.database(new Database("MailFolder", ndnDBConnection.getConfig())))
+//              .where(Expression.property("name").equalTo(Expression.string(name.toUri())));
+
           ResultSet mailFolderResult = mailFolderQuery.execute();
           for (Result result : mailFolderResult) {
             System.out.println("*(*(*(*(*(*(*(*(*((*(");
@@ -186,6 +208,9 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
           for (Result result : mimeMessageResult) {
             contentByte = result.getBlob("content").getContent();
           }
+          System.out.println("***********************************");
+          System.out.println("content size: " + contentByte.length);
+          System.out.println("***********************************");
         } catch (CouchbaseLiteException e) {
           e.printStackTrace();
         }
@@ -197,13 +222,32 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
 
       // Send the data
       long sendStartTime = System.nanoTime();
-      try {
-        // Re-construct wireEncoding
-        Blob encoding = new Blob(contentByte, false);
-        face.send(encoding);
-      } catch (IOException ex) {
-        System.out.println("Echo: IOException in sending data " + ex.getMessage());
+      if (adu.equals("probe")) {
+        System.out.println("***********************************");
+        System.out.println("ProbeSize String: " + probeSizeStr);
+        System.out.println("***********************************");
+        Data probeData = new Data(name);
+        probeData.setContent(new Blob(probeSizeStr));
+        try {
+          keyChain_.sign(data, certificateName_);
+          face.putData(probeData);
+        } catch (SecurityException e) {
+          e.printStackTrace();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+
+      } else {
+        try {
+          // Re-construct wireEncoding
+          Blob encoding = new Blob(contentByte, false);
+          System.out.println("Size of the packet is: " + encoding.size());
+          face.send(encoding);
+        } catch (IOException ex) {
+          System.out.println("Echo: IOException in sending data " + ex.getMessage());
+        }
       }
+
       long sendEndTime = System.nanoTime();
       sendTime += (sendEndTime - sendStartTime);
       System.out.println(">>> Send ave cost: " + (sendTime / count++) / 1000000000.0);

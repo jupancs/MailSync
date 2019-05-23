@@ -1,5 +1,6 @@
 package com.icegreen.greenmail.ndnproxy;
 
+import com.google.common.primitives.Longs;
 import com.icegreen.greenmail.store.MessageFlags;
 import com.icegreen.greenmail.store.StoredMessage;
 import com.sun.mail.imap.IMAPFolder;
@@ -25,27 +26,53 @@ public class NdnFolder {
   public static List<String> messgeID = new ArrayList<>();
   public static Snapshot snapshot;
   public static int syncNumber = 0;
+  public static List<Long> messageUidList = new ArrayList<>();
+  public static int sizeDiff = 0;
+  public static int lastSize;
+  public static HashMap<Long, Flags> flagsMap = new HashMap<>();
+
+  public static int updateSize() {
+    int size = 0;
+    try {
+      size = folder.getMessageCount() - lastSize;
+    } catch (MessagingException e) {
+      e.printStackTrace();
+    }
+    return size;
+  }
 
   public static Snapshot getSnapshot() throws MessagingException {
     snapshot = new Snapshot(0);
     snapshot.map = new HashMap<>();
     snapshot.flags = MessageFlags.format(folder.getPermanentFlags());
+    System.out.println("$$$$$$$$$$$$$$$$ check 1 $$$$$$$$$$$$$$$$");
     snapshot.exists = folder.getMessageCount();
+    System.out.println("$$$$$$$$$$$$$$$$ check 2 $$$$$$$$$$$$$$$$");
     snapshot.recent = getRecentCount(false);
+    System.out.println("$$$$$$$$$$$$$$$$ check 3 $$$$$$$$$$$$$$$$");
     snapshot.uidvalidity = folder.getUIDValidity();
+    System.out.println("$$$$$$$$$$$$$$$$ check 4 $$$$$$$$$$$$$$$$");
     snapshot.uidnext = folder.getUIDNext();
+    System.out.println("$$$$$$$$$$$$$$$$ check 5 $$$$$$$$$$$$$$$$");
     snapshot.unseen = getFirstUnseen();
+    System.out.println("$$$$$$$$$$$$$$$$ check 6 $$$$$$$$$$$$$$$$");
     snapshot.complete = "READ-ONLY";
     snapshot.size = folder.getMessageCount();
-    snapshot.messageUids = getMessageUids();
+    snapshot.flagMap = flagsMap;
+    System.out.println("$$$$$$$$$$$$$$$$ check 7 $$$$$$$$$$$$$$$$");
+    snapshot.messageUids = Longs.toArray(messageUidList);
+    System.out.println("messageUids size: : : : : " + messageUidList.size());
+//    snapshot.messageUids = getMessageUids();
+        System.out.println("$$$$$$$$$$$$$$$$ check 8 $$$$$$$$$$$$$$$$");
     snapshot.messageID = messgeID;
     snapshot.syncAmount = syncNumber;
     return snapshot;
   }
 
   public static int getMsn(long uid) throws MessagingException {
-    //messageUids = getMessageUids();
+    System.out.println("############# check 1 ############# check 1");
     long[] uids = getMessageUids();
+    System.out.println("############# check 2 ############# check 2");
     for (int i = 0; i < uids.length; i++) {
       long messageUid = uids[i];
       if (uid == messageUid) {
@@ -59,18 +86,30 @@ public class NdnFolder {
     FetchProfile profile = new FetchProfile();
     profile.add(UIDFolder.FetchProfileItem.UID);
     Message[] messages = folder.getMessages();
+    System.out.println("<><><><><><><><> Message size is: " + messages.length);
     folder.fetch(messages, profile);
 
     messageUids = new long[folder.getMessageCount()];
-
+    System.out.println("############# check 4 ############# check 4");
     int size = messages.length;
-    for (int i = 0; i < size; i++) {
-//      System.out.println(i + " message number: " + messages[i].getMessageNumber());
-      messageUids[i] = folder.getUID(messages[i]);
-      snapshot.flagMap.put(messageUids[i], messages[i].getFlags());
+//    sizeDiff = folder.getMessageCount() - getLastSize();
+//    for (int i = 0; i < size; i++) {
+//      messageUids[i] = folder.getUID(messages[i]);
+//      snapshot.flagMap.put(messageUids[i], messages[i].getFlags());
+//    }
+//    for (int i = lastSize; i < lastSize + updateSize(); i++) {
+    for (int i = lastSize; i < lastSize + updateSize(); i++) {
+      System.out.println("i ======== " + i);
+      messageUidList.add(folder.getUID(messages[i]));
+//      messageUids[i] = folder.getUID(messages[i]);
+//      snapshot.flagMap.put(messageUidList.get(i), messages[i].getFlags());
+      flagsMap.put(messageUidList.get(i), messages[i].getFlags());
     }
-
-    return messageUids;
+    lastSize = folder.getMessageCount();
+    System.out.println("Last size is: >>>>>>>> " + lastSize);
+    System.out.println("############# check 3 ############# check 3");
+    return Longs.toArray(messageUidList);
+//    return messageUids;
   }
 
   private static int getFirstUnseen() throws MessagingException {
@@ -82,21 +121,6 @@ public class NdnFolder {
       return 0;
     }
     return getMsn(folder.getUID(messages[0]));
-//    for (int i = 0; i < folder.getMessageCount(); i++) {
-//      long start = System.nanoTime();
-//      System.out.println(i);
-//
-//      MimeMessage message = (MimeMessage) messages[i];
-//      long end = System.nanoTime();
-//
-//
-//      if (!message.isSet(Flags.Flag.SEEN)) {
-//        return i + 1;
-//      }
-//      System.out.println(">>> Download time cost: " + (double) (end - start) / 1000000000.0);
-//      System.out.println("======================================");
-//    }
-//    return -1;
   }
 
   private static int getRecentCount(boolean reset) throws MessagingException {
@@ -118,8 +142,6 @@ public class NdnFolder {
 
     for (int i = 0; i< folder.getMessageCount(); i++) {
       Message message = messages[i];
-      // Update message sequence number for potential sequence set search
-      // https://tools.ietf.org/html/rfc3501#page-10
       if (searchTerm.match((MimeMessage) message)) {
         matchedMessages.add(message);
       }
@@ -133,5 +155,4 @@ public class NdnFolder {
     }
     return matchedUids;
   }
-
 }

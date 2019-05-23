@@ -36,7 +36,6 @@ import com.intel.jndn.management.types.FaceStatus;
 import com.intel.jndn.management.types.RibEntry;
 import com.sun.mail.imap.IMAPFolder;
 
-import net.named_data.jndn.Face;
 import net.named_data.jndn.Name;
 import net.named_data.jndn.encoding.EncodingException;
 import net.named_data.jndn_xx.util.FaceUri;
@@ -45,6 +44,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -86,6 +86,9 @@ public class MainServerFragment extends BaseFragment {
 
   @BindView(R2.id.btn_clear_database)
   Button clearDatabaseButton;
+
+//  @BindView(R2.id.get_ip)
+//  Button getIpButton;
 
   @BindView(R2.id.server_status)
   TextView serverStatus;
@@ -130,29 +133,7 @@ public class MainServerFragment extends BaseFragment {
         = ((AppCompatActivity) getActivity()).getSupportActionBar();
     ColorDrawable colorDrawable = new ColorDrawable(Color.parseColor("#ffffff"));
     actionBar.setBackgroundDrawable(colorDrawable);
-
     actionBar.setTitle(Html.fromHtml("<font color='#009a68'>MailSync</font>"));
-
-    // Create a route for "mailsync"
-    new Thread(new Runnable() {
-      @Override
-      public void run() {
-        NfdcHelper nfdcHelper = new NfdcHelper();
-        try {
-          FaceStatus faceStatus =
-              nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
-          int faceId = faceStatus.getFaceId();
-          nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
-          nfdcHelper.shutdown();
-        } catch (ManagementException e) {
-          e.printStackTrace();
-        } catch (FaceUri.CanonizeError canonizeError) {
-          canonizeError.printStackTrace();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-      }
-    }).start();
 
     Intent intent = getActivity().getIntent();
     userEmail = intent.getExtras().getString("EMAIL_ACCOUNT");
@@ -182,34 +163,59 @@ public class MainServerFragment extends BaseFragment {
           try {
             boolean currnetInternetState = isNetworkAvailable();
             if (lastInternetState != currnetInternetState) {
-              new Thread(new Runnable() {
-                @Override
-                public void run() {
-                  NfdcHelper nfdcHelper = new NfdcHelper();
-                  boolean routeExists = false;
-                  try {
-                    for (RibEntry ribEntry : nfdcHelper.ribList()) {
-                      if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
-                        routeExists = true;
-                        break;
-                      }
-                    }
-                    if (!routeExists) {
-                      FaceStatus faceStatus =
-                          nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
-                      int faceId = faceStatus.getFaceId();
-                      nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
-                    }
-                    nfdcHelper.shutdown();
-                  } catch (ManagementException e) {
-                    e.printStackTrace();
-                  } catch (FaceUri.CanonizeError canonizeError) {
-                    canonizeError.printStackTrace();
-                  } catch (Exception e) {
-                    e.printStackTrace();
-                  }
-                }
-              }).start();
+//              NfdcHelper nfdcHelper = new NfdcHelper();
+//              boolean routeExists = false;
+//              try {
+//                for (RibEntry ribEntry : nfdcHelper.ribList()) {
+//                  if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
+//                    routeExists = true;
+//                    break;
+//                  }
+//                }
+//                if (!routeExists) {
+//                  FaceStatus faceStatus =
+//                      nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
+//                  int faceId = faceStatus.getFaceId();
+//                  nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
+//                }
+//                nfdcHelper.shutdown();
+//              } catch (ManagementException e) {
+//                e.printStackTrace();
+//              } catch (FaceUri.CanonizeError canonizeError) {
+//                canonizeError.printStackTrace();
+//              } catch (Exception e) {
+//                e.printStackTrace();
+//              }
+
+//              new Thread(new Runnable() {
+//                @Override
+//                public void run() {
+//                  NfdcHelper nfdcHelper = new NfdcHelper();
+//                  boolean routeExists = false;
+//                  try {
+//                    for (RibEntry ribEntry : nfdcHelper.ribList()) {
+//                      if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
+//                        routeExists = true;
+//                        break;
+//                      }
+//                    }
+//                    if (!routeExists) {
+//                      FaceStatus faceStatus =
+//                          nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
+//                      int faceId = faceStatus.getFaceId();
+//                      nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
+//                    }
+//                    nfdcHelper.shutdown();
+//                  } catch (ManagementException e) {
+//                    e.printStackTrace();
+//                  } catch (FaceUri.CanonizeError canonizeError) {
+//                    canonizeError.printStackTrace();
+//                  } catch (Exception e) {
+//                    e.printStackTrace();
+//                  }
+//                }
+//              }).start();
+
               stop = !currnetInternetState;
               getActivity().runOnUiThread(new Runnable() {
                 @Override
@@ -246,24 +252,38 @@ public class MainServerFragment extends BaseFragment {
 
     return rootView;
   }
-//
-//  @OnCheckedChanged(R2.id.main_server_switch)
-//  public void setServiceSwitch() {
-//    if (ndnService) {
-//      ExternalProxy.setSelectedProxy(2);
-//      ndnService = false;
-//    } else {
-//      ExternalProxy.setSelectedProxy(1);
-//      ndnService = true;
-//    }
-//  }
   
   @OnClick(R2.id.run_server)
   public void setRunServerButton() {
+
+    if (!isNetworkAvailable()) {
+      new Thread(new Runnable() {
+        @Override
+        public void run() {
+          NfdcHelper nfdcHelper = new NfdcHelper();
+          try {
+            List<String> ipList = getArpLiveIps(true);
+            String connectedDeviceIp = ipList.get(0);
+
+            System.out.println("IP address is: " + connectedDeviceIp);
+            String faceUri = "udp4://" + connectedDeviceIp + ":56363";
+            int faceId = nfdcHelper.faceCreate(faceUri);
+            nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
+            nfdcHelper.shutdown();
+          } catch (ManagementException e) {
+            e.printStackTrace();
+          } catch (FaceUri.CanonizeError canonizeError) {
+            canonizeError.printStackTrace();
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+        }
+      }).start();
+    }
+
     progressStatus = 0;
     ExternalProxy.setUser(userEmail, userPassword);
     ExternalProxy.setSelectedProxy(2);
-
     if (isNetworkAvailable()) {
       hasInternetBefore = true;
 //      ExternalProxy.gmail.stop();
@@ -287,6 +307,7 @@ public class MainServerFragment extends BaseFragment {
 
       ExternalProxy.ndnMailSyncOneThread =
           new NDNMailSyncOneThread(getContext().getApplicationContext());
+
     } else {
       if (hasInternetBefore) {
         try {

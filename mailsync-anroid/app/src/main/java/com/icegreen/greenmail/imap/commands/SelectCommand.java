@@ -238,7 +238,7 @@ class SelectCommand extends AuthenticatedStateCommand {
 
           if (NdnFolder.folder != null && NdnFolder.folder.exists()) {
             if (NdnFolder.folder.isOpen() && NdnFolder.folder.getMode() != Folder.READ_WRITE) {
-//              NdnFolder.folder.close(false);
+              NdnFolder.folder.close(false);
               NdnFolder.folder.open(Folder.READ_WRITE);
             } else if (!NdnFolder.folder.isOpen()) {
               NdnFolder.folder.open(Folder.READ_WRITE);
@@ -248,16 +248,13 @@ class SelectCommand extends AuthenticatedStateCommand {
             System.out.println(errMsg);
           }
 
-//          session.deselect();
-//
-//          final boolean isExamine = this instanceof ExamineCommand;
-//          selectMailbox(mailboxName, session, isExamine);
-//          System.out.println(":::::::::: " + mailboxName);
-
+          System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^");
+          System.out.println(" Ding Ding");
           Snapshot snapshot = NdnFolder.getSnapshot();
+          System.out.println(" Da Da");
+          System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^");
 
           response.flagsStringResponse(snapshot.flags);
-          //      response.existsResponse(snapshot.size);
           response.existsResponse(snapshot.size);
 
           final boolean resetRecent = !isExamine;

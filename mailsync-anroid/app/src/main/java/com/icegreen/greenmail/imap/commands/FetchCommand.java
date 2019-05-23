@@ -236,9 +236,9 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
   }
 
   public static void doNDNProcess(String idSetString,
-                                  String fetchString,
-                                  MailFolder mailbox,
-                                  Snapshot snapshot)
+                                   String fetchString,
+                                   MailFolder mailbox,
+                                   Snapshot snapshot)
       throws Exception {
     //NDN process
     //convert json to obj
