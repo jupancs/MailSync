@@ -6,16 +6,16 @@ dependencies {
     implementation files('libs/slf4j-api-1.7.25.jar')
     implementation files('libs/commons-io-2.5.jar')
     implementation files('libs/jndn-0.16.jar')
-    implementation 'com.android.support:appcompat-v7:28.0.0-rc01'
-    implementation 'com.android.support:support-v4:28.0.0-rc01'
-    implementation 'com.android.support:recyclerview-v7:28.0.0-rc01'
-    implementation "com.android.support:design:28.0.0-rc01"
-    implementation 'com.android.support.constraint:constraint-layout:1.1.2'
-    implementation 'com.android.support:design:28.0.0-rc01'
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support:support-v4:28.0.0'
+    implementation 'com.android.support:recyclerview-v7:28.0.0'
+    implementation "com.android.support:design:28.0.0"
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    implementation 'com.android.support:design:28.0.0'
     implementation 'com.sun.mail:android-mail:1.6.0'
     implementation 'com.sun.mail:android-activation:1.6.0'
-    implementation 'com.jakewharton:butterknife:8.4.0'
-    annotationProcessor 'com.jakewharton:butterknife-compiler:8.4.0'
+    implementation 'com.jakewharton:butterknife:9.0.0-rc2'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:9.0.0-rc2'
     implementation 'com.makeramen:roundedimageview:2.3.0'
     implementation 'com.couchbase.lite:couchbase-lite-android-ee:2.0.0'
     api 'com.google.guava:guava:26.0-android'
@@ -51,6 +51,10 @@ android {
             annotationProcessorOptions {
                 includeCompileClasspath true
             }
+        }
+        compileOptions {
+            sourceCompatibility JavaVersion.VERSION_1_8
+            targetCompatibility JavaVersion.VERSION_1_8
         }
         android.defaultConfig.javaCompileOptions.annotationProcessorOptions.includeCompileClasspath = true
     }
