@@ -68,7 +68,6 @@ public class LoginFragment extends BaseFragment {
     email = userEmailEditText.getText().toString();
     password = userPasswordEditText.getText().toString();
     emailViewModel.getEmail().setValue(email);
-    emailViewModel.setEmailName(email);
     emailViewModel.getPassword().setValue(password);
 //    Intent intent = new Intent(getActivity(), MainServerActivity.class);
 //    intent.putExtra("EMAIL_ACCOUNT", email);
