@@ -1,24 +1,25 @@
 package edu.ua.cs.nrl.mailsync;
 
+import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModel;
 
 public class EmailViewModel extends ViewModel {
-        private String email;
-        private String password;
+        private MutableLiveData<String> email;
+        private MutableLiveData<String> password;
 
-        public void setPassword(String password) {
-                this.password = password;
+
+
+        public MutableLiveData<String> getPassword() {
+                if(password==null){
+                        password=new MutableLiveData<>();
+                }
+                return password;
         }
 
-        public String getPassword() {
-                return password.trim();
-        }
-
-        public void setEmail(String email) {
-                this.email = email;
-        }
-
-        public String getEmail() {
+        public MutableLiveData<String> getEmail() {
+                if(email==null){
+                        email=new MutableLiveData<>();
+                }
                 return email ;
         }
 }
