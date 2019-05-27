@@ -1,5 +1,7 @@
 package edu.ua.cs.nrl.mailsync.fragments;
 
+import android.arch.lifecycle.ViewModel;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -12,6 +14,7 @@ import android.os.StrictMode;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -63,6 +66,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.Unbinder;
+import edu.ua.cs.nrl.mailsync.EmailViewModel;
 import edu.ua.cs.nrl.mailsync.R;
 import edu.ua.cs.nrl.mailsync.R2;
 import edu.ua.cs.nrl.mailsync.database.NdnDBConnection;
@@ -120,6 +124,9 @@ public class MainServerFragment extends BaseFragment {
   private int lastMailboxSize;
 
   private boolean isFirstTime = true;
+  private EmailViewModel emailViewModel;
+
+  private String TAG = "MainServerFragment";
 
   public static MainServerFragment newInstance() {
     return new MainServerFragment();
@@ -129,15 +136,18 @@ public class MainServerFragment extends BaseFragment {
   public void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
+    emailViewModel= ViewModelProviders.of(getActivity()).get(EmailViewModel.class);
+
     android.support.v7.app.ActionBar actionBar
         = ((AppCompatActivity) getActivity()).getSupportActionBar();
     ColorDrawable colorDrawable = new ColorDrawable(Color.parseColor("#ffffff"));
     actionBar.setBackgroundDrawable(colorDrawable);
     actionBar.setTitle(Html.fromHtml("<font color='#009a68'>MailSync</font>"));
 
-    Intent intent = getActivity().getIntent();
-    userEmail = intent.getExtras().getString("EMAIL_ACCOUNT");
-    userPassword = intent.getExtras().getString("EMAIL_PASSWORD");
+//    Intent intent = getActivity().getIntent();
+//    userEmail = intent.getExtras().getString("EMAIL_ACCOUNT");
+//    userPassword = intent.getExtras().getString("EMAIL_PASSWORD");
+
 
     ndnDBConnection = NdnDBConnectionFactory.getDBConnection(
         "couchbaseLite",
@@ -244,11 +254,21 @@ public class MainServerFragment extends BaseFragment {
                            @Nullable Bundle savedInstanceState) {
     View rootView = inflater.inflate(R.layout.fragment_main_server, container, false);
     unbinder = ButterKnife.bind(this, rootView);
+    emailViewModel.getEmail().observe(this, userEmail -> {
+      // update UI
+      char firstLetter = Character.toUpperCase(userEmail.charAt(0));
+      iconLetter.setText(String.valueOf(firstLetter));
+      emailAccount.setText(userEmail);
+      emailDescription.setText("You are running email account: " + userEmail + " for test.");
+      this.userEmail=userEmail;
+      Log.v(TAG,userEmail);
+    });
 
-    char firstLetter = Character.toUpperCase(userEmail.charAt(0));
-    iconLetter.setText(String.valueOf(firstLetter));
-    emailAccount.setText(userEmail);
-    emailDescription.setText("You are running email account: " + userEmail + " for test.");
+    emailViewModel.getPassword().observe(this, userPassword -> {
+      this.userPassword=userPassword;
+    });
+
+
 
     return rootView;
   }
