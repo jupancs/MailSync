@@ -1,10 +1,13 @@
 package edu.ua.cs.nrl.mailsync.fragments;
 
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TextInputEditText;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,8 +17,10 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.Unbinder;
+import edu.ua.cs.nrl.mailsync.EmailViewModel;
 import edu.ua.cs.nrl.mailsync.R;
 import edu.ua.cs.nrl.mailsync.R2;
+import edu.ua.cs.nrl.mailsync.activities.BaseFragmentActivity;
 import edu.ua.cs.nrl.mailsync.activities.MainServerActivity;
 
 public class LoginFragment extends BaseFragment {
@@ -33,6 +38,8 @@ public class LoginFragment extends BaseFragment {
 
   private String email;
   private String password;
+  EmailViewModel emailViewModel;
+  private String TAG = "Login Fragment";
 
   public static LoginFragment newInstance() {
     return new LoginFragment();
@@ -52,6 +59,7 @@ public class LoginFragment extends BaseFragment {
 
     View rootView = inflater.inflate(R.layout.fragment_login, container, false);
     unbinder = ButterKnife.bind(this, rootView);
+    emailViewModel= ViewModelProviders.of(getActivity()).get(EmailViewModel.class);
     return rootView;
   }
 
@@ -59,11 +67,16 @@ public class LoginFragment extends BaseFragment {
   public void setLoginButton() {
     email = userEmailEditText.getText().toString();
     password = userPasswordEditText.getText().toString();
-
-    Intent intent = new Intent(getActivity(), MainServerActivity.class);
-    intent.putExtra("EMAIL_ACCOUNT", email);
-    intent.putExtra("EMAIL_PASSWORD", password);
-    startActivity(intent);
+    emailViewModel.getEmail().setValue(email);
+    emailViewModel.setEmailName(email);
+    emailViewModel.getPassword().setValue(password);
+//    Intent intent = new Intent(getActivity(), MainServerActivity.class);
+//    intent.putExtra("EMAIL_ACCOUNT", email);
+//    intent.putExtra("EMAIL_PASSWORD", password);
+//    startActivity(intent);
+    FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+    fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer,new MainServerFragment());
+    fragmentTransaction.commit();
   }
 
 
