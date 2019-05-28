@@ -133,14 +133,93 @@ public class MainServerFragment extends BaseFragment {
 //    userPassword = intent.getExtras().getString("EMAIL_PASSWORD");
 
 
-        ndnDBConnection = NdnDBConnectionFactory.getDBConnection(
-                "couchbaseLite",
-                getContext().getApplicationContext()
-        );
 
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
+        initializeDB();
+        initializeThreadPolicy();
+        initializeExternamProxy();
 
+
+//        new Thread(new Runnable() {
+//            public void run() {
+//                while (true) {
+//                    try {
+//                        boolean currnetInternetState = isNetworkAvailable();
+//                        if (lastInternetState != currnetInternetState) {
+////              NfdcHelper nfdcHelper = new NfdcHelper();
+////              boolean routeExists = false;
+////              try {
+////                for (RibEntry ribEntry : nfdcHelper.ribList()) {
+////                  if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
+////                    routeExists = true;
+////                    break;
+////                  }
+////                }
+////                if (!routeExists) {
+////                  FaceStatus faceStatus =
+////                      nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
+////                  int faceId = faceStatus.getFaceId();
+////                  nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
+////                }
+////                nfdcHelper.shutdown();
+////              } catch (ManagementException e) {
+////                e.printStackTrace();
+////              } catch (FaceUri.CanonizeError canonizeError) {
+////                canonizeError.printStackTrace();
+////              } catch (Exception e) {
+////                e.printStackTrace();
+////              }
+//
+////              new Thread(new Runnable() {
+////                @Override
+////                public void run() {
+////                  NfdcHelper nfdcHelper = new NfdcHelper();
+////                  boolean routeExists = false;
+////                  try {
+////                    for (RibEntry ribEntry : nfdcHelper.ribList()) {
+////                      if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
+////                        routeExists = true;
+////                        break;
+////                      }
+////                    }
+////                    if (!routeExists) {
+////                      FaceStatus faceStatus =
+////                          nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
+////                      int faceId = faceStatus.getFaceId();
+////                      nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
+////                    }
+////                    nfdcHelper.shutdown();
+////                  } catch (ManagementException e) {
+////                    e.printStackTrace();
+////                  } catch (FaceUri.CanonizeError canonizeError) {
+////                    canonizeError.printStackTrace();
+////                  } catch (Exception e) {
+////                    e.printStackTrace();
+////                  }
+////                }
+////              }).start();
+//
+//                            stop = !currnetInternetState;
+//                            getActivity().runOnUiThread(new Runnable() {
+//                                @Override
+//                                public void run() {
+////                  synchronized (TranslateWorker.class) {
+//                                    runServerButton.performClick();
+////                  }
+//                                }
+//                            });
+//                        }
+//                        lastInternetState = currnetInternetState;
+//                        // Sleep for 1000 milliseconds.
+//                        Thread.sleep(1000);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }
+//        }).start();
+    }
+
+    private void initializeExternamProxy() {
         ExternalProxy.context = getContext().getApplicationContext();
 
         if (isNetworkAvailable()) {
@@ -152,85 +231,18 @@ public class MainServerFragment extends BaseFragment {
             emailViewModel.setNetworkStatus(false);
             ExternalProxy.setSelectedProxy(2);
         }
+    }
 
-        new Thread(new Runnable() {
-            public void run() {
-                while (true) {
-                    try {
-                        boolean currnetInternetState = isNetworkAvailable();
-                        if (lastInternetState != currnetInternetState) {
-//              NfdcHelper nfdcHelper = new NfdcHelper();
-//              boolean routeExists = false;
-//              try {
-//                for (RibEntry ribEntry : nfdcHelper.ribList()) {
-//                  if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
-//                    routeExists = true;
-//                    break;
-//                  }
-//                }
-//                if (!routeExists) {
-//                  FaceStatus faceStatus =
-//                      nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
-//                  int faceId = faceStatus.getFaceId();
-//                  nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
-//                }
-//                nfdcHelper.shutdown();
-//              } catch (ManagementException e) {
-//                e.printStackTrace();
-//              } catch (FaceUri.CanonizeError canonizeError) {
-//                canonizeError.printStackTrace();
-//              } catch (Exception e) {
-//                e.printStackTrace();
-//              }
+    private void initializeThreadPolicy() {
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
+    }
 
-//              new Thread(new Runnable() {
-//                @Override
-//                public void run() {
-//                  NfdcHelper nfdcHelper = new NfdcHelper();
-//                  boolean routeExists = false;
-//                  try {
-//                    for (RibEntry ribEntry : nfdcHelper.ribList()) {
-//                      if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
-//                        routeExists = true;
-//                        break;
-//                      }
-//                    }
-//                    if (!routeExists) {
-//                      FaceStatus faceStatus =
-//                          nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
-//                      int faceId = faceStatus.getFaceId();
-//                      nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
-//                    }
-//                    nfdcHelper.shutdown();
-//                  } catch (ManagementException e) {
-//                    e.printStackTrace();
-//                  } catch (FaceUri.CanonizeError canonizeError) {
-//                    canonizeError.printStackTrace();
-//                  } catch (Exception e) {
-//                    e.printStackTrace();
-//                  }
-//                }
-//              }).start();
-
-                            stop = !currnetInternetState;
-                            getActivity().runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-//                  synchronized (TranslateWorker.class) {
-                                    runServerButton.performClick();
-//                  }
-                                }
-                            });
-                        }
-                        lastInternetState = currnetInternetState;
-                        // Sleep for 1000 milliseconds.
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }).start();
+    private void initializeDB() {
+        ndnDBConnection = NdnDBConnectionFactory.getDBConnection(
+                "couchbaseLite",
+                getContext().getApplicationContext()
+        );
     }
 
     @Nullable
