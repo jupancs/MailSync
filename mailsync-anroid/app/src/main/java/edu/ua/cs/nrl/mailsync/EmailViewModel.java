@@ -10,16 +10,11 @@ import android.net.NetworkInfo;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 
-import java.util.concurrent.ScheduledExecutorService;
-
-import butterknife.Unbinder;
-import edu.ua.cs.nrl.mailsync.database.NdnDBConnection;
-import edu.ua.cs.nrl.mailsync.relayer.Relayer;
 
 public class EmailViewModel extends AndroidViewModel {
         private MutableLiveData<String> email;
         private MutableLiveData<String> password;
-        private EmailRepository emailRepository;
+        private static EmailRepository emailRepository;
         private boolean networkStatus;
 
 
@@ -27,15 +22,13 @@ public class EmailViewModel extends AndroidViewModel {
 
         public EmailViewModel(@NonNull Application application) {
                 super(application);
-                this.emailRepository=new EmailRepository(getApplication().getApplicationContext());
+
         }
 
-//        public EmailViewModel(@NonNull Application application){
-//                super(application);
-//                this.emailRepository= new EmailRepository();
-//        }
+        public static void clearDatabase() {
+                emailRepository.clearDatabase();
 
-
+        }
 
         public MutableLiveData<String> getPassword() {
                 if(password==null){
@@ -59,13 +52,18 @@ public class EmailViewModel extends AndroidViewModel {
                 return networkStatus;
         }
 
-        public void startServer(){
+        public void startServer(String userEmail, String userPassword){
+                emailRepository.startServer(userEmail,userPassword);
+        }
+
+        public void init(String userEmail, String userPassword){
+                emailRepository=new EmailRepository(getApplication().getApplicationContext(),userEmail,userPassword);
+                emailRepository.init();
+
 
         }
 
-        public void init(){
 
-        }
         public boolean isNetworkAvailable() {
                 ConnectivityManager connectivityManager
                         = (ConnectivityManager) getApplication()
