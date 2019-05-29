@@ -4,7 +4,6 @@ import android.arch.lifecycle.ViewModelProviders;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
@@ -16,11 +15,6 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.Database;
-
-import java.util.concurrent.ScheduledExecutorService;
-
 import javax.mail.Message;
 
 import butterknife.BindView;
@@ -30,8 +24,6 @@ import butterknife.Unbinder;
 import edu.ua.cs.nrl.mailsync.EmailViewModel;
 import edu.ua.cs.nrl.mailsync.R;
 import edu.ua.cs.nrl.mailsync.R2;
-import edu.ua.cs.nrl.mailsync.database.NdnDBConnection;
-import edu.ua.cs.nrl.mailsync.relayer.Relayer;
 
 public class MainServerFragment extends BaseFragment {
 
@@ -54,19 +46,9 @@ public class MainServerFragment extends BaseFragment {
     Button clearDatabaseButton;
     @BindView(R2.id.server_status)
     TextView serverStatus;
-    boolean hasInternetBefore = false;
     private Unbinder unbinder;
     private String userEmail;
     private String userPassword;
-    private ScheduledExecutorService scheduleTaskExecutor;
-    private boolean ndnService = false;
-    private NdnDBConnection ndnDBConnection;
-    private Handler handler = new Handler();
-    private boolean lastInternetState = true;
-    private Relayer relayer;
-    private int lastMailboxSize;
-
-    private boolean isFirstTime = true;
     private EmailViewModel emailViewModel;
 
     private String TAG = "MainServerFragment";
@@ -80,132 +62,15 @@ public class MainServerFragment extends BaseFragment {
         super.onCreate(savedInstanceState);
 
         emailViewModel = ViewModelProviders.of(getActivity()).get(EmailViewModel.class);
-
         android.support.v7.app.ActionBar actionBar
                 = ((AppCompatActivity) getActivity()).getSupportActionBar();
         ColorDrawable colorDrawable = new ColorDrawable(Color.parseColor("#ffffff"));
         actionBar.setBackgroundDrawable(colorDrawable);
         actionBar.setTitle(Html.fromHtml("<font color='#009a68'>MailSync</font>"));
-
-//    Intent intent = getActivity().getIntent();
-//    userEmail = intent.getExtras().getString("EMAIL_ACCOUNT");
-//    userPassword = intent.getExtras().getString("EMAIL_PASSWORD");
-
-
         emailViewModel.init(userEmail, userPassword);
 
-
-//        new Thread(new Runnable() {
-//            public void run() {
-//                while (true) {
-//                    try {
-//                        boolean currnetInternetState = isNetworkAvailable();
-//                        if (lastInternetState != currnetInternetState) {
-////              NfdcHelper nfdcHelper = new NfdcHelper();
-////              boolean routeExists = false;
-////              try {
-////                for (RibEntry ribEntry : nfdcHelper.ribList()) {
-////                  if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
-////                    routeExists = true;
-////                    break;
-////                  }
-////                }
-////                if (!routeExists) {
-////                  FaceStatus faceStatus =
-////                      nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
-////                  int faceId = faceStatus.getFaceId();
-////                  nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
-////                }
-////                nfdcHelper.shutdown();
-////              } catch (ManagementException e) {
-////                e.printStackTrace();
-////              } catch (FaceUri.CanonizeError canonizeError) {
-////                canonizeError.printStackTrace();
-////              } catch (Exception e) {
-////                e.printStackTrace();
-////              }
-//
-////              new Thread(new Runnable() {
-////                @Override
-////                public void run() {
-////                  NfdcHelper nfdcHelper = new NfdcHelper();
-////                  boolean routeExists = false;
-////                  try {
-////                    for (RibEntry ribEntry : nfdcHelper.ribList()) {
-////                      if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
-////                        routeExists = true;
-////                        break;
-////                      }
-////                    }
-////                    if (!routeExists) {
-////                      FaceStatus faceStatus =
-////                          nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
-////                      int faceId = faceStatus.getFaceId();
-////                      nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
-////                    }
-////                    nfdcHelper.shutdown();
-////                  } catch (ManagementException e) {
-////                    e.printStackTrace();
-////                  } catch (FaceUri.CanonizeError canonizeError) {
-////                    canonizeError.printStackTrace();
-////                  } catch (Exception e) {
-////                    e.printStackTrace();
-////                  }
-////                }
-////              }).start();
-//
-//                            stop = !currnetInternetState;
-//                            getActivity().runOnUiThread(new Runnable() {
-//                                @Override
-//                                public void run() {
-////                  synchronized (TranslateWorker.class) {
-//                                    runServerButton.performClick();
-////                  }
-//                                }
-//                            });
-//                        }
-//                        lastInternetState = currnetInternetState;
-//                        // Sleep for 1000 milliseconds.
-//                        Thread.sleep(1000);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//            }
-//        }).start();
     }
 
-//    private void init(){
-//        initializeDB();
-//        initializeThreadPolicy();
-//        initializeExternalProxy();
-//    }
-//
-//    private void initializeExternalProxy() {
-//        ExternalProxy.context = getContext().getApplicationContext();
-//
-//        if (isNetworkAvailable()) {
-//            lastInternetState = true;
-//            emailViewModel.setNetworkStatus(true);
-//            ExternalProxy.setSelectedProxy(2);
-//        } else {
-//            lastInternetState = false;
-//            emailViewModel.setNetworkStatus(false);
-//            ExternalProxy.setSelectedProxy(2);
-//        }
-//    }
-//
-//    private void initializeThreadPolicy() {
-//        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-//        StrictMode.setThreadPolicy(policy);
-//    }
-//
-//    private void initializeDB() {
-//        ndnDBConnection = NdnDBConnectionFactory.getDBConnection(
-//                "couchbaseLite",
-//                getContext().getApplicationContext()
-//        );
-//    }
 
     @Nullable
     @Override
@@ -246,17 +111,6 @@ public class MainServerFragment extends BaseFragment {
         EmailViewModel.clearDatabase();
     }
 
-    public void clearDatabase() {
-        try {
-            new Database("MailFolder", ndnDBConnection.getConfig()).delete();
-            new Database("Attribute", ndnDBConnection.getConfig()).delete();
-            new Database("MimeMessage", ndnDBConnection.getConfig()).delete();
-            new Database("MessageID", ndnDBConnection.getConfig()).delete();
-        } catch (CouchbaseLiteException e) {
-            e.printStackTrace();
-        }
-    }
-
 //  @OnClick(R2.id.get_ip)
 //  public void setGetIpButton() {
 //    List<String> list = getArpLiveIps(true);
@@ -281,194 +135,4 @@ public class MainServerFragment extends BaseFragment {
         unbinder.unbind();
     }
 
-    // **********************
-    // Helper methods below
-
-    /**
-     * Check out if the Internet if available.
-     *
-     * @return
-     */
-//    private boolean isNetworkAvailable() {
-//        ConnectivityManager connectivityManager
-//                = (ConnectivityManager) getActivity()
-//                .getApplicationContext()
-//                .getSystemService(Context.CONNECTIVITY_SERVICE);
-//        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-//        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
-//    }
-//
-//    private void saveToNdnStorage(String user, String password) {
-//        try {
-//            Properties props = new Properties();
-//            props.setProperty("mail.store.protocol", "imaps");
-//            props.setProperty("mail.imap.host", "imap.gmail.com");
-//
-//            // create properties field
-//            Session session = Session.getInstance(props, null);
-//
-//            // create the IMAP store object and connect with the pop server
-//            Store store = session.getStore("imaps");
-//
-//            try {
-//                store.connect("imap.gmail.com", user, password);
-////        store.connect("127.0.0.1", 3143, user, password);
-//            } catch (AuthenticationFailedException e) {
-//                System.out.println("Login Failed: " + e.getMessage());
-//            }
-//
-//            // create the folder object and open it
-//            Folder emailFolder = store.getFolder("INBOX");
-//            emailFolder.open(Folder.READ_WRITE);
-//
-//            NdnFolder.folder = (IMAPFolder) emailFolder;
-//
-//            messages = emailFolder.getMessages();
-//            lastMailboxSize = messages.length;
-//
-//            System.out.println("messages.length---" + messages.length);
-////      System.out.println("IMAP count: --" + NdnFolder.folder.getMessageCount());
-//            int msgSize = messages.length;
-//
-//            int i = msgSize - 1;
-//            while (true) {
-//                Properties props2 = new Properties();
-//                props2.setProperty("mail.store.protocol", "imaps");
-//
-//                // create properties field
-//                Session session2 = Session.getInstance(props2, null);
-//
-//                // create the IMAP store object and connect with the pop server
-//                Store store2 = session2.getStore("imaps");
-//
-//                try {
-//                    store2.connect("imap.gmail.com", user, password);
-////          store2.connect("127.0.0.1", 3143, user, password);
-//                } catch (AuthenticationFailedException e) {
-//                    System.out.println("Login Failed: " + e.getMessage());
-//                }
-//
-//                // create the folder object and open it
-//                Folder folder = store2.getFolder("INBOX");
-//                folder.open(Folder.READ_WRITE);
-//
-//                NdnFolder.folder = (IMAPFolder) folder;
-//
-//                messages = new Message[folder.getMessageCount()];
-//                messages = folder.getMessages();
-//
-//                int mailboxSize = folder.getMessageCount();
-//
-//                if (msgSize < mailboxSize) {
-//                    for (int j = mailboxSize - 1; j >= msgSize; j--) {
-//                        MimeMessage mimeMessage = (MimeMessage) messages[j];
-//                        NdnFolder.messgeID.add(0, mimeMessage.getMessageID());
-//                        System.out.println("size: " + j);
-//                        TranslateWorker.start(mimeMessage, getContext());
-//                    }
-//                    msgSize = mailboxSize;
-//                    i++;
-//                } else if (msgSize - i <= LIMIT) {
-//                    MimeMessage mimeMessage = (MimeMessage) messages[i];
-//                    NdnFolder.messgeID.add(mimeMessage.getMessageID());
-//                    System.out.println("Normallllllllllll size: " + i);
-//                    TranslateWorker.start(mimeMessage, getContext());
-//                }
-//                if (msgSize - i <= LIMIT) {
-//                    i--;
-//                }
-//                store2.close();
-//                if (i > LIMIT) {
-//                    Thread.sleep(200);
-//                }
-//            }
-//        } catch (NoSuchProviderException e) {
-//            e.printStackTrace();
-//        } catch (MessagingException e) {
-//            e.printStackTrace();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//
-//
-//    /**
-//     * Display database content in console
-//     *
-//     * @param database
-//     * @throws CouchbaseLiteException
-//     */
-//    private void printDatabaseHelper(Database database) throws CouchbaseLiteException {
-//        Query queryShowAll = QueryBuilder
-//                .select(SelectResult.all())
-//                .from(DataSource.database(database));
-//        ResultSet resultShowAll = queryShowAll.execute();
-//        System.out.println(">>> " + database.getName() + " <<<");
-//        for (Result result : resultShowAll) {
-//            System.out.println(result.toList().toString());
-//        }
-//        System.out.println(">>>>>>>>>>>><<<<<<<<<<<<");
-//    }
-//
-//    /**
-//     * Get IP addresses that connected to the Android hotspot
-//     *
-//     * @param onlyReachables
-//     * @return a list of IP addresses
-//     */
-//    private ArrayList<String> getArpLiveIps(boolean onlyReachables) {
-//        BufferedReader bufRead = null;
-//        ArrayList<String> result = null;
-//
-//        try {
-//            result = new ArrayList<>();
-//            bufRead = new BufferedReader(new FileReader("/proc/net/arp"));
-//            String fileLine;
-//            while ((fileLine = bufRead.readLine()) != null) {
-//                String[] splitted = fileLine.split(" +");
-//                if ((splitted != null) && (splitted.length >= 4)) {
-//                    String mac = splitted[3];
-//                    if (mac.matches("..:..:..:..:..:..")) {
-//                        boolean isReachable = pingCmd(splitted[0]);/**
-//                         * Method to Ping  IP Address
-//                         * @return true if the IP address is reachable
-//                         */
-//                        if (!onlyReachables || isReachable) {
-//                            result.add(splitted[0]);
-//                        }
-//                    }
-//                }
-//            }
-//        } catch (Exception e) {
-//        } finally {
-//            try {
-//                bufRead.close();
-//            } catch (IOException e) {
-//            }
-//        }
-//        return result;
-//    }
-//
-//    private boolean pingCmd(String addr) {
-//        try {
-//            String ping = "ping  -c 1 -W 1 " + addr;
-//            Runtime run = Runtime.getRuntime();
-//            Process pro = run.exec(ping);
-//            try {
-//                pro.waitFor();
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//            int exit = pro.exitValue();
-//            if (exit == 0) {
-//                return true;
-//            } else {
-//                //ip address is not reachable
-//                return false;
-//            }
-//        } catch (IOException e) {
-//        }
-//        return false;
-//    }
 }
