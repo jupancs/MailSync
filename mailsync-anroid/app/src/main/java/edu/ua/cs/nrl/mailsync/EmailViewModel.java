@@ -16,8 +16,6 @@ public class EmailViewModel extends AndroidViewModel {
     private boolean networkStatus;
 
 
-    private boolean isFirstTime = true;
-
     public EmailViewModel(@NonNull Application application) {
         super(application);
 
@@ -42,14 +40,6 @@ public class EmailViewModel extends AndroidViewModel {
         return email;
     }
 
-    public void setNetworkStatus(boolean networkStatus) {
-        this.networkStatus = networkStatus;
-    }
-
-    public boolean getNetworkStatus() {
-        return networkStatus;
-    }
-
     public void startServer(String userEmail, String userPassword) {
         emailRepository.startServer(userEmail, userPassword);
     }
@@ -61,15 +51,6 @@ public class EmailViewModel extends AndroidViewModel {
 
     }
 
-
-    public boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager
-                = (ConnectivityManager) getApplication()
-                .getApplicationContext()
-                .getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
-    }
 
 
 }
