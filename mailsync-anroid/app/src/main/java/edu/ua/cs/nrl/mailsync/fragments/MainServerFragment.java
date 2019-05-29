@@ -1,16 +1,10 @@
 package edu.ua.cs.nrl.mailsync.fragments;
 
-import android.arch.lifecycle.ViewModel;
 import android.arch.lifecycle.ViewModelProviders;
-import android.content.Context;
-import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.StrictMode;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
@@ -23,44 +17,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.DataSource;
 import com.couchbase.lite.Database;
-import com.couchbase.lite.Query;
-import com.couchbase.lite.QueryBuilder;
-import com.couchbase.lite.Result;
-import com.couchbase.lite.ResultSet;
-import com.couchbase.lite.SelectResult;
-import com.icegreen.greenmail.ExternalProxy;
-import com.icegreen.greenmail.ndnproxy.NDNMailSyncOneThread;
-import com.icegreen.greenmail.ndnproxy.NdnFolder;
-import com.icegreen.greenmail.ndntranslator.TranslateWorker;
-import com.intel.jndn.management.ManagementException;
-import com.intel.jndn.management.types.FaceStatus;
-import com.intel.jndn.management.types.RibEntry;
-import com.sun.mail.imap.IMAPFolder;
 
-import net.named_data.jndn.Name;
-import net.named_data.jndn.encoding.EncodingException;
-import net.named_data.jndn_xx.util.FaceUri;
-
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
-import javax.mail.AuthenticationFailedException;
-import javax.mail.Folder;
 import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.NoSuchProviderException;
-import javax.mail.Session;
-import javax.mail.Store;
-import javax.mail.internet.MimeMessage;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -70,9 +31,7 @@ import edu.ua.cs.nrl.mailsync.EmailViewModel;
 import edu.ua.cs.nrl.mailsync.R;
 import edu.ua.cs.nrl.mailsync.R2;
 import edu.ua.cs.nrl.mailsync.database.NdnDBConnection;
-import edu.ua.cs.nrl.mailsync.database.NdnDBConnectionFactory;
 import edu.ua.cs.nrl.mailsync.relayer.Relayer;
-import edu.ua.cs.nrl.mailsync.utils.NfdcHelper;
 
 public class MainServerFragment extends BaseFragment {
 
@@ -83,7 +42,7 @@ public class MainServerFragment extends BaseFragment {
     @BindView(R2.id.icon_letter)
     TextView iconLetter;
 
-//  @BindView(R2.id.get_ip)
+    //  @BindView(R2.id.get_ip)
 //  Button getIpButton;
     @BindView(R2.id.email_account)
     TextView emailAccount;
@@ -133,8 +92,7 @@ public class MainServerFragment extends BaseFragment {
 //    userPassword = intent.getExtras().getString("EMAIL_PASSWORD");
 
 
-
-        emailViewModel.init(userEmail,userPassword);
+        emailViewModel.init(userEmail, userPassword);
 
 
 //        new Thread(new Runnable() {
@@ -277,18 +235,18 @@ public class MainServerFragment extends BaseFragment {
 
     @OnClick(R2.id.run_server)
     public void setRunServerButton() {
-        Toast.makeText(getContext(),userEmail+userPassword,Toast.LENGTH_SHORT).show();
-        emailViewModel.startServer(userEmail,userPassword);
+        Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
+        emailViewModel.startServer(userEmail, userPassword);
         Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
         serverStatus.setText("Running ...");
     }
-    
+
     @OnClick(R2.id.btn_clear_database)
     public void setClearDatabaseButton() {
         EmailViewModel.clearDatabase();
     }
 
-    public void clearDatabase(){
+    public void clearDatabase() {
         try {
             new Database("MailFolder", ndnDBConnection.getConfig()).delete();
             new Database("Attribute", ndnDBConnection.getConfig()).delete();
@@ -315,7 +273,6 @@ public class MainServerFragment extends BaseFragment {
 //        "Route: " + "udp4://" + ipAddr + ":6363 is copied to the clipboard!",
 //        Toast.LENGTH_LONG).show();
 //  }
-
 
 
     @Override

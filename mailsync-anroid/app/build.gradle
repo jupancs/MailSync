@@ -25,6 +25,7 @@ dependencies {
         exclude group: 'net.named-data', module: 'jndn'
     }
     implementation 'net.named-data.jndn-extra:jndn-xx-util:0.0.2'
+    implementation 'android.arch.lifecycle:extensions:1.1.1'
 }
 
 repositories {

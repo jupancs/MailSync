@@ -1,15 +1,11 @@
 package edu.ua.cs.nrl.mailsync;
 
-import android.app.Activity;
-import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.StrictMode;
-import android.widget.Toast;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
@@ -50,11 +46,12 @@ public class EmailRepository {
     private Relayer relayer;
     private int lastMailboxSize;
     private Context context;
-    private MutableLiveData<Boolean>networkStatus;
-    public EmailRepository(Context context, String userEmail, String userPassword){
-        this.context=context;
-        this.userEmail=userEmail;
-        this.userPassword=userPassword;
+    private MutableLiveData<Boolean> networkStatus;
+
+    public EmailRepository(Context context, String userEmail, String userPassword) {
+        this.context = context;
+        this.userEmail = userEmail;
+        this.userPassword = userPassword;
     }
 
     public boolean isNetworkAvailable() {
@@ -64,11 +61,13 @@ public class EmailRepository {
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
-    public void init(){
+
+    public void init() {
         initializeDB();
         initializeThreadPolicy();
         initializeExternalProxy();
     }
+
     private void initializeExternalProxy() {
         ExternalProxy.context = context;
 
@@ -85,10 +84,10 @@ public class EmailRepository {
         }
     }
 
-    public MutableLiveData<Boolean> getNetworkStatus(){
+    public MutableLiveData<Boolean> getNetworkStatus() {
 
-        if(networkStatus==null){
-            networkStatus=new MutableLiveData<>();
+        if (networkStatus == null) {
+            networkStatus = new MutableLiveData<>();
         }
         return networkStatus;
     }
@@ -104,7 +103,8 @@ public class EmailRepository {
                 context.getApplicationContext()
         );
     }
-    public void registerPrefix(){
+
+    public void registerPrefix() {
         if (!isNetworkAvailable()) {
             new Thread(new Runnable() {
                 @Override
@@ -131,6 +131,7 @@ public class EmailRepository {
         }
 
     }
+
     private ArrayList<String> getArpLiveIps(boolean onlyReachables) {
         BufferedReader bufRead = null;
         ArrayList<String> result = null;
@@ -163,6 +164,7 @@ public class EmailRepository {
         }
         return result;
     }
+
     private boolean pingCmd(String addr) {
         try {
             String ping = "ping  -c 1 -W 1 " + addr;
@@ -184,7 +186,8 @@ public class EmailRepository {
         }
         return false;
     }
-    public void startGmail(){
+
+    public void startGmail() {
         hasInternetBefore = true;
 //      ExternalProxy.gmail.stop();
 
@@ -194,7 +197,6 @@ public class EmailRepository {
             }
         }).start();
         ExternalProxy.setSelectedProxy(2);
-
 
 
         // Start the relayer service
@@ -208,7 +210,7 @@ public class EmailRepository {
                 new NDNMailSyncOneThread(context.getApplicationContext());
     }
 
-    public void shutdownRelayer(){
+    public void shutdownRelayer() {
         if (hasInternetBefore) {
             try {
                 if (relayer.getServerSocket() != null) {
@@ -220,12 +222,12 @@ public class EmailRepository {
         }
     }
 
-    public void startRelayer(){
+    public void startRelayer() {
         relayer = new Relayer(3143);
         relayer.execute(new String[]{""});
     }
 
-    public void ndnMailExecution(){
+    public void ndnMailExecution() {
         scheduleTaskExecutor = Executors.newScheduledThreadPool(5);
         scheduleTaskExecutor.scheduleAtFixedRate(new Runnable() {
             public void run() {
@@ -236,8 +238,8 @@ public class EmailRepository {
         isFirstTime = false;
     }
 
-    public void startServer(String userEmail,String userPassword) {
-        System.out.println("In EmailRepo"+"username:"+userEmail+userPassword);
+    public void startServer(String userEmail, String userPassword) {
+        System.out.println("In EmailRepo" + "username:" + userEmail + userPassword);
         registerPrefix();
 //        progressStatus = 0;
         ExternalProxy.setUser(userEmail, userPassword);
