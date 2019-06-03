@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -50,6 +51,7 @@ public class MainServerFragment extends BaseFragment {
     private String userEmail;
     private String userPassword;
     private EmailViewModel emailViewModel;
+    ProgressBar progressBar;
 
     private String TAG = "MainServerFragment";
 
@@ -67,7 +69,7 @@ public class MainServerFragment extends BaseFragment {
         ColorDrawable colorDrawable = new ColorDrawable(Color.parseColor("#ffffff"));
         actionBar.setBackgroundDrawable(colorDrawable);
         actionBar.setTitle(Html.fromHtml("<font color='#009a68'>MailSync</font>"));
-        emailViewModel.init(userEmail, userPassword);
+
 
     }
 
@@ -88,10 +90,15 @@ public class MainServerFragment extends BaseFragment {
             this.userEmail = userEmail;
             Log.v(TAG, userEmail);
         });
-
         emailViewModel.getPassword().observe(this, userPassword -> {
             this.userPassword = userPassword;
         });
+        //initializes the view of viewmodel and the progress bar to 0
+        emailViewModel.view= rootView;
+        emailViewModel.init(userEmail, userPassword);
+        progressBar= rootView.findViewById(R.id.download_bar);
+        progressBar.setProgress(0);
+
 
 
         return rootView;
@@ -101,6 +108,7 @@ public class MainServerFragment extends BaseFragment {
     @OnClick(R2.id.run_server)
     public void setRunServerButton() {
         Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
+        Log.d(TAG,"Are you working"  + userEmail+userPassword);
         emailViewModel.startServer(userEmail, userPassword);
         Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
         serverStatus.setText("Running ...");
