@@ -7,6 +7,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.annotation.NonNull;
+import android.view.View;
 
 
 public class EmailViewModel extends AndroidViewModel {
@@ -14,6 +15,7 @@ public class EmailViewModel extends AndroidViewModel {
     private MutableLiveData<String> password;
     private static EmailRepository emailRepository;
     private boolean networkStatus;
+    public View view;
 
 
     public EmailViewModel(@NonNull Application application) {
@@ -40,13 +42,15 @@ public class EmailViewModel extends AndroidViewModel {
         return email;
     }
 
+    //Starts server in emailRepo and passes view so that it can be updated
     public void startServer(String userEmail, String userPassword) {
-        emailRepository.startServer(userEmail, userPassword);
+        emailRepository.startServer(userEmail, userPassword, view);
     }
 
+    //init initializes the view in EmailRepo
     public void init(String userEmail, String userPassword) {
         emailRepository = new EmailRepository(getApplication().getApplicationContext(), userEmail, userPassword);
-        emailRepository.init();
+        emailRepository.init(view);
 
 
     }
