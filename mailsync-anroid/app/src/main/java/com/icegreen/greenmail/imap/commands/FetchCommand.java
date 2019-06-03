@@ -45,6 +45,8 @@ import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.IMAPMessage;
 import com.sun.mail.imap.protocol.INTERNALDATE;
 
+import edu.ua.cs.nrl.mailsync.EmailRepository;
+
 
 /**
  * Handles processing for the FETCH imap command.
@@ -59,7 +61,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
   public static final String ARGS = "<message-set> <fetch-profile>";
   private static final Flags FLAGS_SEEN = new Flags(Flags.Flag.SEEN);
   private static final Pattern NUMBER_MATCHER = Pattern.compile("^\\d+$");
-
+  private static EmailRepository emailRepository;
   private FetchCommandParser parser = new FetchCommandParser();
   private int cnt = 0;
 
@@ -102,7 +104,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
         Folder emailFolder = store.getFolder("INBOX");
         emailFolder.open(Folder.READ_WRITE);
         IMAPFolder imapFolder = (IMAPFolder) emailFolder;
-
+        emailRepository= new EmailRepository();
         NdnFolder.folder = imapFolder;
 
         for (IdRange idRange : idSet) {
@@ -188,7 +190,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
 //    response.commandComplete(this);
 
   }
-
+  //Saves to NDN storage and increments storedMessages in emailRepository for later use
   private void saveToNdnStorage(IMAPFolder folder, long uid) {
     try {
       Message message = folder.getMessage(getMsn(uid, folder));
@@ -197,6 +199,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
       NdnFolder.messgeID.add(mimeMessage.getMessageID());
       TranslateWorker.start(mimeMessage, ExternalProxy.context);
       System.out.println("Saved Email with UID: " + uid);
+      emailRepository.incrementStoredMessages();
     } catch (MessagingException e) {
       e.printStackTrace();
     } catch (FolderException e) {
