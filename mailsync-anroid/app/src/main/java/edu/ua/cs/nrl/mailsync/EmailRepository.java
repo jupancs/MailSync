@@ -5,7 +5,12 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.StrictMode;
+import android.util.Log;
+import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
@@ -15,6 +20,8 @@ import com.intel.jndn.management.ManagementException;
 
 import net.named_data.jndn.Name;
 import net.named_data.jndn_xx.util.FaceUri;
+
+import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -31,7 +38,7 @@ import edu.ua.cs.nrl.mailsync.database.NdnDBConnectionFactory;
 import edu.ua.cs.nrl.mailsync.relayer.Relayer;
 import edu.ua.cs.nrl.mailsync.utils.NfdcHelper;
 
-public class EmailRepository {
+public  class EmailRepository {
     private int mailboxSize;
     boolean hasInternetBefore = false;
     private Unbinder unbinder;
@@ -41,17 +48,28 @@ public class EmailRepository {
     private ScheduledExecutorService scheduleTaskExecutor;
     private boolean ndnService = false;
     private NdnDBConnection ndnDBConnection;
-    private Handler handler = new Handler();
     private boolean lastInternetState = true;
     private Relayer relayer;
     private int lastMailboxSize;
     private Context context;
     private MutableLiveData<Boolean> networkStatus;
+    private static View view;
+    private static int storedMessages;
+    private static final String TAG = "EmailRepo";
+    TextView textView;
+
+
+
+
 
     public EmailRepository(Context context, String userEmail, String userPassword) {
         this.context = context;
         this.userEmail = userEmail;
         this.userPassword = userPassword;
+    }
+
+    public EmailRepository(){
+
     }
 
     public boolean isNetworkAvailable() {
@@ -62,10 +80,48 @@ public class EmailRepository {
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
-    public void init() {
+    //Initializes the DB, thread policy, External policy and view
+    public void init(View view) {
         initializeDB();
         initializeThreadPolicy();
         initializeExternalProxy();
+        this.view=view;
+
+        if(view==null){
+            Log.d(TAG,"View null");
+        }
+    }
+
+    //Increments stored messages number and checks if the view is null if not then
+    // the text view showing the stored messages is incremented
+    synchronized public void incrementStoredMessages(){
+        if(view==null){
+            Log.d(TAG,"View is null inside increment");
+        }
+        storedMessages++;
+        System.out.println("Email repo stored message " + storedMessages);
+        textView=view.findViewById(R.id.stored_emails);
+        updateText(Integer.toString(storedMessages));
+    }
+
+    //Updates the Textview to the new storedMessages value
+    synchronized public void updateText(String text){
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            public void run() {
+
+                textView.setText(text);
+
+            }
+        });
+    }
+
+    public   int getStoredMessages() {
+        return storedMessages;
+    }
+
+    public void setStoredMessages(int value){
+        storedMessages=value;
     }
 
     private void initializeExternalProxy() {
@@ -187,7 +243,7 @@ public class EmailRepository {
         return false;
     }
 
-    public void startGmail() {
+    public void startGmail(View view) {
         hasInternetBefore = true;
 //      ExternalProxy.gmail.stop();
 
@@ -207,7 +263,7 @@ public class EmailRepository {
         }
 
         ExternalProxy.ndnMailSyncOneThread =
-                new NDNMailSyncOneThread(context.getApplicationContext());
+                new NDNMailSyncOneThread(context.getApplicationContext(),view);
     }
 
     public void shutdownRelayer() {
@@ -238,7 +294,7 @@ public class EmailRepository {
         isFirstTime = false;
     }
 
-    public void startServer(String userEmail, String userPassword) {
+    public void startServer(String userEmail, String userPassword, View view) {
         System.out.println("In EmailRepo" + "username:" + userEmail + userPassword);
         registerPrefix();
 //        progressStatus = 0;
@@ -247,12 +303,12 @@ public class EmailRepository {
         if (isNetworkAvailable()) {
             System.out.println("Network available");
             startRelayer();
-            startGmail();
+            startGmail(view);
 
         } else {
             shutdownRelayer();
             System.out.println("Network NOT available");
-            startGmail();
+            startGmail(view);
         }
         ndnMailExecution();
     }
