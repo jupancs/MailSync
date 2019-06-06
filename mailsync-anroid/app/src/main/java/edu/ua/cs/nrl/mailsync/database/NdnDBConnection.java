@@ -24,4 +24,14 @@ public interface NdnDBConnection {
    * @return
    */
   DatabaseConfiguration getConfig();
+
+  /**
+   * Delete name-data with the name specified in the database on Android
+   *
+   * @param name
+   *
+   * @param databaseName
+   */
+  void deleteNDNData(String name, String databaseName)
+      throws CouchbaseLiteException;
 }
