@@ -206,9 +206,6 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
                     for (Result result : mailFolderResult) {
                         System.out.println("*(*(*(*(*(*(*(*(*((*(");
                         contentByte = result.getBlob("content").getContent();
-                        toast(context, "MailSync will sync" + i + "Emails");
-                        i++;
-                        updateProgress(i);
                     }
 //          List<Result> list= mailFolderResult.allResults();
 
@@ -239,6 +236,8 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
 
                     for (Result result : mimeMessageResult) {
                         contentByte = result.getBlob("content").getContent();
+                        toast(context, "MailSync will sync" + i + "Emails");
+                        i++;
                     }
                     System.out.println("***********************************");
                     System.out.println("content size: " + contentByte.length);
@@ -275,6 +274,7 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
                     Blob encoding = new Blob(contentByte, false);
                     System.out.println("Size of the packet is: " + encoding.size());
                     face.send(encoding);
+                    updateProgress(i);
                 } catch (IOException ex) {
                     System.out.println("Echo: IOException in sending data " + ex.getMessage());
                 }
