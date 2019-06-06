@@ -6,21 +6,38 @@
  */
 package com.icegreen.greenmail.imap.commands;
 
-import android.widget.Toast;
-
 import com.couchbase.lite.CouchbaseLiteException;
+import com.google.gson.Gson;
 import com.icegreen.greenmail.ExternalProxy;
-import com.icegreen.greenmail.imap.*;
+import com.icegreen.greenmail.imap.ImapRequestLineReader;
+import com.icegreen.greenmail.imap.ImapResponse;
+import com.icegreen.greenmail.imap.ImapSession;
+import com.icegreen.greenmail.imap.ImapSessionFolder;
+import com.icegreen.greenmail.imap.ProtocolException;
 import com.icegreen.greenmail.ndnproxy.NdnFolder;
+import com.icegreen.greenmail.ndnproxy.Snapshot;
 import com.icegreen.greenmail.ndntranslator.TranslateWorker;
 import com.icegreen.greenmail.store.FolderException;
+import com.icegreen.greenmail.store.MailFolder;
 import com.icegreen.greenmail.store.MessageFlags;
 import com.icegreen.greenmail.store.SimpleMessageAttributes;
 import com.icegreen.greenmail.store.StoredMessage;
-import com.icegreen.greenmail.store.MailFolder;
 import com.icegreen.greenmail.util.GreenMailUtil;
+import com.sun.mail.imap.IMAPFolder;
+import com.sun.mail.imap.IMAPMessage;
+import com.sun.mail.imap.protocol.INTERNALDATE;
 
-import javax.mail.AuthenticationFailedException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+import java.util.regex.Pattern;
+
 import javax.mail.BodyPart;
 import javax.mail.FetchProfile;
 import javax.mail.Flags;
@@ -34,16 +51,6 @@ import javax.mail.Store;
 import javax.mail.UIDFolder;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.*;
-import java.util.regex.Pattern;
-
-import com.google.gson.Gson;
-import com.icegreen.greenmail.ndnproxy.Snapshot;
-import com.sun.mail.imap.IMAPFolder;
-import com.sun.mail.imap.IMAPMessage;
-import com.sun.mail.imap.protocol.INTERNALDATE;
 
 import edu.ua.cs.nrl.mailsync.EmailRepository;
 
@@ -57,76 +64,99 @@ import edu.ua.cs.nrl.mailsync.EmailRepository;
  * @version $Revision: 109034 $
  */
 public class FetchCommand extends SelectedStateCommand implements UidEnabledCommand {
-  public static final String NAME = "FETCH";
-  public static final String ARGS = "<message-set> <fetch-profile>";
-  private static final Flags FLAGS_SEEN = new Flags(Flags.Flag.SEEN);
-  private static final Pattern NUMBER_MATCHER = Pattern.compile("^\\d+$");
-  private static EmailRepository emailRepository;
-  private FetchCommandParser parser = new FetchCommandParser();
-  private int cnt = 0;
+    public static final String NAME = "FETCH";
+    public static final String ARGS = "<message-set> <fetch-profile>";
+    private static final Flags FLAGS_SEEN = new Flags(Flags.Flag.SEEN);
+    private static final Pattern NUMBER_MATCHER = Pattern.compile("^\\d+$");
+    private static EmailRepository emailRepository;
+    private FetchCommandParser parser = new FetchCommandParser();
+    private int cnt = 0;
 
-  FetchCommand() {
-    super(NAME, ARGS);
-  }
-
-  @Override
-  protected void doProcess(ImapRequestLineReader request,
-                           ImapResponse response,
-                           ImapSession session)
-      throws ProtocolException, FolderException, MessagingException {
-    doProcess(request, response, session, false);
-  }
-
-  @Override
-  public void doProcess(ImapRequestLineReader request,
-                        ImapResponse response,
-                        ImapSession session,
-                        boolean useUids)
-      throws ProtocolException, FolderException, MessagingException {
-    IdRange[] idSet = parser.parseIdRange(request);
-    FetchRequest fetch = parser.fetchRequest(request);
-    parser.endLine(request);
-
-    if (useUids) {
-      fetch.uid = true;
+    FetchCommand() {
+        super(NAME, ARGS);
     }
 
-    System.out.println("I am in Fetch Command!");
-    if (fetch.internalDate) {
+    @Override
+    protected void doProcess(ImapRequestLineReader request,
+                             ImapResponse response,
+                             ImapSession session)
+            throws ProtocolException, FolderException, MessagingException {
+        doProcess(request, response, session, false);
+    }
 
-      try {
-        Properties props = new Properties();
-        props.setProperty("mail.store.protocol", "imaps");
-        props.setProperty("mail.imap.host", "imap.gmail.com");
-        Session sessionIMAP = Session.getInstance(props, null);
-        Store store = sessionIMAP.getStore("imaps");
-        store.connect("imap.gmail.com", ExternalProxy.userEmail, ExternalProxy.userPassword);
-        Folder emailFolder = store.getFolder("INBOX");
-        emailFolder.open(Folder.READ_WRITE);
-        IMAPFolder imapFolder = (IMAPFolder) emailFolder;
-        emailRepository= new EmailRepository();
-        NdnFolder.folder = imapFolder;
+    @Override
+    public void doProcess(ImapRequestLineReader request,
+                          ImapResponse response,
+                          ImapSession session,
+                          boolean useUids)
+            throws ProtocolException, FolderException, MessagingException {
+        IdRange[] idSet = parser.parseIdRange(request);
+        FetchRequest fetch = parser.fetchRequest(request);
+        parser.endLine(request);
+        //Instance of EmailRepository to update storedMessages in emailrepo
+        emailRepository = new EmailRepository();
 
-        for (IdRange idRange : idSet) {
-          long uid = idRange.getLowVal();
-          System.out.println(">>>> Fetching UID: " + uid);
-          NdnFolder.syncNumber++;
-          saveToNdnStorage(imapFolder, uid);
+        if (useUids) {
+            fetch.uid = true;
         }
+        System.out.println("I am in Fetch Command!");
+        //EmailRepository.isIsIncomplete() keeps track of if there are any incomplete emails that need to be completed
+        System.out.println("IsIncomplete" + EmailRepository.isIsIncomplete());
+        if (fetch.internalDate || EmailRepository.isIsIncomplete()) {
+            try {
+                Properties props = new Properties();
+                props.setProperty("mail.store.protocol", "imaps");
+                props.setProperty("mail.imap.host", "imap.gmail.com");
+                Session sessionIMAP = Session.getInstance(props, null);
+                Store store = sessionIMAP.getStore("imaps");
+                store.connect("imap.gmail.com", ExternalProxy.userEmail, ExternalProxy.userPassword);
+                Folder emailFolder = store.getFolder("INBOX");
+                emailFolder.open(Folder.READ_WRITE);
+                IMAPFolder imapFolder = (IMAPFolder) emailFolder;
+                System.out.println("In here 7!!!!");
+                NdnFolder.folder = imapFolder;
 
-        NdnFolder.messgeID.clear();
-        NdnFolder.syncNumber = 0;
+                //If isIncomplete is true then fetch the uid of the email that needs to be completed and complete it
+                // and  EmailRepository.getIncompleteUids() gives the list of incomplete uids to complete
 
-        store.close();
 
-      } catch (NoSuchProviderException e) {
-        e.printStackTrace();
-      } catch (MessagingException e) {
-        e.printStackTrace();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
+                if (fetch.internalDate) {
+                    for (IdRange idRange : idSet) {
+                        long uid = idRange.getLowVal();
+                        System.out.println("Uid of range " + uid);
+                        System.out.println(">>>> Fetching UID: " + uid);
+                        NdnFolder.syncNumber++;
+                        saveToNdnStorage(imapFolder, uid);
+                    }
+
+
+                }
+                //saves the email to ndnstorage and removes the email from
+                // the array list
+                if (EmailRepository.isIsIncomplete()) {
+                    ArrayList<Long> incomplete = EmailRepository.getIncompleteUids();
+                    int i = 0;
+                    while (!incomplete.isEmpty()) {
+                        long uid = incomplete.get(i);
+                        System.out.println(">>>> Fetching UID: " + uid);
+                        NdnFolder.syncNumber++;
+                        saveToNdnStorage(imapFolder, uid);
+                        emailRepository.removeIncompleteUids(uid);
+                        i++;
+                    }
+                }
+                NdnFolder.messgeID.clear();
+                NdnFolder.syncNumber = 0;
+                store.close();
+
+            } catch (NoSuchProviderException e) {
+                e.printStackTrace();
+            } catch (MessagingException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
 
 //    //local operations -- greenmail send it back
@@ -185,970 +215,986 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
 //      response.fetchResponse(NdnFolder.getMsn(lastMessageUid), msgData);
 //    }
 //
-//    boolean omitExpunged = !useUids;
+//    boolean omitExpunged = !useUids;getSnapshot
 //    session.unsolicitedResponses(response, omitExpunged);
 //    response.commandComplete(this);
 
-  }
-  //Saves to NDN storage and increments storedMessages in emailRepository for later use
-  private void saveToNdnStorage(IMAPFolder folder, long uid) {
-    try {
-      Message message = folder.getMessage(getMsn(uid, folder));
-      MimeMessage mimeMessage = (MimeMessage) message;
-      mimeMessage = new MimeMessage(mimeMessage);
-      NdnFolder.messgeID.add(mimeMessage.getMessageID());
-      TranslateWorker.start(mimeMessage, ExternalProxy.context);
-      System.out.println("Saved Email with UID: " + uid);
-      emailRepository.incrementStoredMessages();
-    } catch (MessagingException e) {
-      e.printStackTrace();
-    } catch (FolderException e) {
-      e.printStackTrace();
-    } catch (CouchbaseLiteException e) {
-      e.printStackTrace();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-
-  private int getMsn(long uid, IMAPFolder folder) throws MessagingException {
-    long[] uids = getMessageUids(folder);
-    for (int i = 0; i < uids.length; i++) {
-      long messageUid = uids[i];
-      if (uid == messageUid) {
-        return i + 1;
-      }
-    }
-    return -1;
-  }
-
-  private long[] getMessageUids(IMAPFolder folder) throws MessagingException {
-    FetchProfile profile = new FetchProfile();
-    profile.add(UIDFolder.FetchProfileItem.UID);
-    Message[] messages = folder.getMessages();
-    folder.fetch(messages, profile);
-
-    long[] messageUids = new long[folder.getMessageCount()];
-
-    int size = folder.getMessageCount();
-    for (int i = 0; i < size; i++) {
-      messageUids[i] = folder.getUID(messages[i]);
     }
 
-    return messageUids;
-  }
+    //Saves to NDN storage and increments storedMessages in emailRepository for later use
+    //Invoking the exception means something occured while saving so the email uid
+    // is added to the arraylist to be completed later and the user is notified
+    // There is no need to delete the part which is saved of the email because
+    // while saving it can detect if there is a duplicate
+    private void saveToNdnStorage(IMAPFolder folder, long uid) {
+        try {
+            Message message = folder.getMessage(getMsn(uid, folder));
+            MimeMessage mimeMessage = (MimeMessage) message;
+            mimeMessage = new MimeMessage(mimeMessage);
+            NdnFolder.messgeID.add(mimeMessage.getMessageID());
+            TranslateWorker.start(mimeMessage, ExternalProxy.context);
+            System.out.println("Saved Email with UID: " + uid);
+            emailRepository.incrementStoredMessages();
+        } catch (MessagingException e) {
+            e.printStackTrace();
+            emailRepository.addIncompleteUids(uid);
+            emailRepository.notifyIncompleteEmail(uid);
 
-  public static void doNDNProcess(String idSetString,
-                                   String fetchString,
-                                   MailFolder mailbox,
-                                   Snapshot snapshot)
-      throws Exception {
-    //NDN process
-    //convert json to obj
-    Gson gson = new Gson();
-    System.out.println(idSetString);
-    System.out.println(fetchString);
-    IdRange[] idSet = gson.fromJson(idSetString, IdRange[].class);
-    FetchRequest fetch = gson.fromJson(fetchString, FetchRequest.class);
+        } catch (FolderException e) {
+            e.printStackTrace();
+            emailRepository.addIncompleteUids(uid);
+            emailRepository.notifyIncompleteEmail(uid);
 
-    boolean useUids = false;
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+            emailRepository.addIncompleteUids(uid);
+            emailRepository.notifyIncompleteEmail(uid);
 
-    long[] uids = mailbox.getMessageUids();
-    for (long uid : uids) {
-      try {
-        int msn = mailbox.getMsn(uid);
+        } catch (IOException e) {
+            emailRepository.addIncompleteUids(uid);
+            emailRepository.notifyIncompleteEmail(uid);
+            e.printStackTrace();
+        }
+    }
+
+    private int getMsn(long uid, IMAPFolder folder) throws MessagingException {
+        long[] uids = getMessageUids(folder);
+        for (int i = 0; i < uids.length; i++) {
+            long messageUid = uids[i];
+            if (uid == messageUid) {
+                return i + 1;
+            }
+        }
+        return -1;
+    }
+
+    private long[] getMessageUids(IMAPFolder folder) throws MessagingException {
+        FetchProfile profile = new FetchProfile();
+        profile.add(UIDFolder.FetchProfileItem.UID);
+        Message[] messages = folder.getMessages();
+        folder.fetch(messages, profile);
+
+        long[] messageUids = new long[folder.getMessageCount()];
+
+        int size = folder.getMessageCount();
+        for (int i = 0; i < size; i++) {
+            messageUids[i] = folder.getUID(messages[i]);
+        }
+
+        return messageUids;
+    }
+
+    public static void doNDNProcess(String idSetString,
+                                    String fetchString,
+                                    MailFolder mailbox,
+                                    Snapshot snapshot)
+            throws Exception {
+        //NDN process
+        //convert json to obj
+        Gson gson = new Gson();
+        System.out.println(idSetString);
+        System.out.println(fetchString);
+        IdRange[] idSet = gson.fromJson(idSetString, IdRange[].class);
+        FetchRequest fetch = gson.fromJson(fetchString, FetchRequest.class);
+
+        boolean useUids = false;
+
+        long[] uids = mailbox.getMessageUids();
+        for (long uid : uids) {
+            try {
+                int msn = mailbox.getMsn(uid);
+                boolean isIncluded = false;
+                if (useUids) {
+                    for (IdRange x : idSet) {
+                        if (x.includes(uid)) {
+                            isIncluded = true;
+                            break;
+                        }
+                    }
+                } else if (!useUids) {
+                    for (IdRange x : idSet) {
+                        if (x.includes(msn)) {
+                            isIncluded = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (isIncluded) {
+                    String msgData = outputMessageNDN(useUids, fetch, mailbox, uid);
+                    snapshot.fetchResponse.put(msn, msgData);
+                    System.out.println(String.valueOf(msn) + "\n " + msgData);
+                }
+            } catch (Exception e) {
+                System.out.println(e);
+            }
+
+        }
+
+        // a wildcard search must include the last message if the folder is not empty,
+        // as per https://tools.ietf.org/html/rfc3501#section-6.4.8
+        long lastMessageUid = uids.length > 0 ? uids[uids.length - 1] : -1L;
         boolean isIncluded = false;
-        if (useUids) {
-          for (IdRange x : idSet) {
-            if (x.includes(uid)) {
-              isIncluded = true;
-              break;
+        if (mailbox.getMessageCount() > 0) {
+            for (IdRange x : idSet) {
+                if (x.includes(Long.MAX_VALUE)) {
+                    if (!x.includes(lastMessageUid)) {
+                        isIncluded = true;
+                        break;
+                    }
+                }
             }
-          }
-        } else if (!useUids) {
-          for (IdRange x : idSet) {
-            if (x.includes(msn)) {
-              isIncluded = true;
-              break;
-            }
-          }
         }
 
         if (isIncluded) {
-          String msgData = outputMessageNDN(useUids, fetch, mailbox, uid);
-          snapshot.fetchResponse.put(msn, msgData);
-          System.out.println(String.valueOf(msn) + "\n " + msgData);
+            String msgData = outputMessageNDN(useUids, fetch, mailbox, lastMessageUid);
+            snapshot.fetchResponseLastMsn = mailbox.getMsn(lastMessageUid);
+            snapshot.fetchResponseLastMsnData = msgData;
         }
-      } catch (Exception e) {
-        System.out.println(e);
-      }
-
     }
 
-    // a wildcard search must include the last message if the folder is not empty,
-    // as per https://tools.ietf.org/html/rfc3501#section-6.4.8
-    long lastMessageUid = uids.length > 0 ? uids[uids.length - 1] : -1L;
-    boolean isIncluded = false;
-    if (mailbox.getMessageCount() > 0) {
-      for (IdRange x : idSet) {
-        if (x.includes(Long.MAX_VALUE)) {
-          if (!x.includes(lastMessageUid)) {
-            isIncluded = true;
-            break;
-          }
-        }
-      }
-    }
+    public static String outputMessageNDN(boolean useUids, FetchRequest fetch, MailFolder folder, long uid)
+            throws FolderException, ProtocolException {
+        StoredMessage message = folder.getMessage(uid);
 
-    if (isIncluded) {
-      String msgData = outputMessageNDN(useUids, fetch, mailbox, lastMessageUid);
-      snapshot.fetchResponseLastMsn = mailbox.getMsn(lastMessageUid);
-      snapshot.fetchResponseLastMsnData = msgData;
-    }
-  }
+        boolean ensureFlagsResponse = false;
 
-  public static String outputMessageNDN(boolean useUids, FetchRequest fetch, MailFolder folder, long uid)
-      throws FolderException, ProtocolException {
-    StoredMessage message = folder.getMessage(uid);
+        StringBuilder response = new StringBuilder();
 
-    boolean ensureFlagsResponse = false;
-
-    StringBuilder response = new StringBuilder();
-
-    // FLAGS response
-    if (fetch.flags || ensureFlagsResponse) {
-      response.append(" FLAGS ");
-      response.append(MessageFlags.format(message.getFlags()));
-    }
-
-    // INTERNALDATE response
-    if (fetch.internalDate) {
-      response.append(" INTERNALDATE \"");
-      // TODO format properly
-      response.append(message.getAttributes().getReceivedDateAsString());
-      response.append('\"');
-    }
-
-    // RFC822.SIZE response
-    if (fetch.size) {
-      response.append(" RFC822.SIZE ");
-      response.append(message.getAttributes().getSize());
-    }
-
-    // ENVELOPE response
-    if (fetch.envelope) {
-      response.append(" ENVELOPE ");
-      response.append(message.getAttributes().getEnvelope());
-    }
-
-    // BODY response
-    if (fetch.body) {
-      response.append(" BODY ");
-      response.append(message.getAttributes().getBodyStructure(false));
-    }
-
-    // BODYSTRUCTURE response
-    if (fetch.bodyStructure) {
-      response.append(" BODYSTRUCTURE ");
-      response.append(message.getAttributes().getBodyStructure(true));
-    }
-
-    // UID response
-    if (fetch.uid) {
-      response.append(" UID ");
-      response.append(message.getUid());
-    }
-
-    // BODY part responses.
-    Collection<BodyFetchElement> elements = fetch.getBodyElements();
-    for (BodyFetchElement fetchElement : elements) {
-      response.append(SP);
-      response.append(fetchElement.getResponseName());
-      final Partial partial = fetchElement.getPartial();
-      if (null == partial) {
-        response.append(SP);
-      }
-
-      // Various mechanisms for returning message body.
-      String sectionSpecifier = fetchElement.getParameters();
-
-      MimeMessage mimeMessage = message.getMimeMessage();
-      try {
-        handleBodyFetchNDN(mimeMessage, sectionSpecifier, partial, response);
-      } catch (Exception e) {
-        throw new FolderException(e);
-      }
-    }
-
-    if (response.length() > 0) {
-      // Remove the leading " ".
-      return response.substring(1);
-    } else {
-      return "";
-    }
-  }
-
-  public static void handleBodyFetchNDN(MimeMessage mimeMessage,
-                                        String sectionSpecifier,
-                                        Partial partial,
-                                        StringBuilder response)
-      throws IOException, MessagingException {
-
-    System.out.println("Fetching body part for section specifier " + sectionSpecifier +
-        " and mime message (contentType=" + mimeMessage.getContentType());
-
-    if (sectionSpecifier.length() == 0) {
-      // TODO - need to use an InputStream from the response here.
-      ByteArrayOutputStream bout = new ByteArrayOutputStream();
-      mimeMessage.writeTo(bout);
-      byte[] bytes = bout.toByteArray();
-      bytes = doPartialNDN(partial, bytes, response);
-      addLiteralNDN(bytes, response);
-    } else if ("HEADER".equalsIgnoreCase(sectionSpecifier)) {
-      Enumeration<?> inum = mimeMessage.getAllHeaderLines();
-      addHeadersNDN(inum, response, partial);
-    } else if (sectionSpecifier.startsWith("HEADER.FIELDS.NOT")) {
-      String[] excludeNames = extractHeaderListNDN(sectionSpecifier, "HEADER.FIELDS.NOT".length());
-      Enumeration<?> inum = mimeMessage.getNonMatchingHeaderLines(excludeNames);
-      addHeadersNDN(inum, response, partial);
-    } else if (sectionSpecifier.startsWith("HEADER.FIELDS ")) {
-      String[] includeNames = extractHeaderListNDN(sectionSpecifier, "HEADER.FIELDS ".length());
-      Enumeration<?> inum = mimeMessage.getMatchingHeaderLines(includeNames);
-      addHeadersNDN(inum, response, partial);
-    } else if (sectionSpecifier.endsWith("MIME")) {
-      String[] strs = sectionSpecifier.trim().split("\\.");
-      int partNumber = Integer.parseInt(strs[0]) - 1;
-      MimeMultipart mp = (MimeMultipart) mimeMessage.getContent();
-      byte[] bytes = GreenMailUtil.getHeaderAsBytes(mp.getBodyPart(partNumber));
-      bytes = doPartialNDN(partial, bytes, response);
-      addLiteralNDN(bytes, response);
-    } else if ("TEXT".equalsIgnoreCase(sectionSpecifier)) {
-      handleBodyFetchForTextNDN(mimeMessage, partial, response);
-    } else {
-      Object content = mimeMessage.getContent();
-      if (content instanceof String) {
-        handleBodyFetchForTextNDN(mimeMessage, partial, response);
-      } else {
-        MimeMultipart mp = (MimeMultipart) content;
-        BodyPart part = null;
-
-        // Find part by number spec, eg "1" or "2.1" or "4.3.1" ...
-        String spec = sectionSpecifier;
-
-        int dotIdx = spec.indexOf('.');
-        String pre = dotIdx < 0 ? spec : spec.substring(0, dotIdx);
-        while (null != pre && NUMBER_MATCHER.matcher(pre).matches()) {
-          int partNumber = Integer.parseInt(pre) - 1;
-          if (null == part) {
-            part = mp.getBodyPart(partNumber);
-          } else {
-            // Content must be multipart
-            part = ((Multipart) part.getContent()).getBodyPart(partNumber);
-          }
-
-          dotIdx = spec.indexOf('.');
-          if (dotIdx > 0) { // Another sub part index?
-            spec = spec.substring(dotIdx + 1);
-            pre = spec.substring(0, dotIdx);
-          } else {
-            pre = null;
-          }
+        // FLAGS response
+        if (fetch.flags || ensureFlagsResponse) {
+            response.append(" FLAGS ");
+            response.append(MessageFlags.format(message.getFlags()));
         }
 
-        if (null == part) {
-          throw new IllegalStateException("Got null for " + sectionSpecifier);
+        // INTERNALDATE response
+        if (fetch.internalDate) {
+            response.append(" INTERNALDATE \"");
+            // TODO format properly
+            response.append(message.getAttributes().getReceivedDateAsString());
+            response.append('\"');
         }
 
-        // A bit optimistic to only cover theses cases ... TODO
-        if ("message/rfc822".equalsIgnoreCase(part.getContentType())) {
-          handleBodyFetchNDN((MimeMessage) part.getContent(), spec, partial, response);
-        } else if ("TEXT".equalsIgnoreCase(spec)) {
-          handleBodyFetchForTextNDN(mimeMessage, partial, response);
+        // RFC822.SIZE response
+        if (fetch.size) {
+            response.append(" RFC822.SIZE ");
+            response.append(message.getAttributes().getSize());
+        }
+
+        // ENVELOPE response
+        if (fetch.envelope) {
+            response.append(" ENVELOPE ");
+            response.append(message.getAttributes().getEnvelope());
+        }
+
+        // BODY response
+        if (fetch.body) {
+            response.append(" BODY ");
+            response.append(message.getAttributes().getBodyStructure(false));
+        }
+
+        // BODYSTRUCTURE response
+        if (fetch.bodyStructure) {
+            response.append(" BODYSTRUCTURE ");
+            response.append(message.getAttributes().getBodyStructure(true));
+        }
+
+        // UID response
+        if (fetch.uid) {
+            response.append(" UID ");
+            response.append(message.getUid());
+        }
+
+        // BODY part responses.
+        Collection<BodyFetchElement> elements = fetch.getBodyElements();
+        for (BodyFetchElement fetchElement : elements) {
+            response.append(SP);
+            response.append(fetchElement.getResponseName());
+            final Partial partial = fetchElement.getPartial();
+            if (null == partial) {
+                response.append(SP);
+            }
+
+            // Various mechanisms for returning message body.
+            String sectionSpecifier = fetchElement.getParameters();
+
+            MimeMessage mimeMessage = message.getMimeMessage();
+            try {
+                handleBodyFetchNDN(mimeMessage, sectionSpecifier, partial, response);
+            } catch (Exception e) {
+                throw new FolderException(e);
+            }
+        }
+
+        if (response.length() > 0) {
+            // Remove the leading " ".
+            return response.substring(1);
         } else {
-          byte[] bytes = GreenMailUtil.getBodyAsBytes(part);
-          bytes = doPartialNDN(partial, bytes, response);
-          addLiteralNDN(bytes, response);
+            return "";
         }
-      }
-    }
-  }
-
-  public static void handleBodyFetchForTextNDN(MimeMessage mimeMessage, Partial partial, StringBuilder response) {
-    // TODO - need to use an InputStream from the response here.
-    // TODO - this is a hack. To get just the body content, I'm using a null
-    // input stream to take the headers. Need to have a way of ignoring headers.
-
-    byte[] bytes = GreenMailUtil.getBodyAsBytes(mimeMessage);
-    bytes = doPartialNDN(partial, bytes, response);
-    addLiteralNDN(bytes, response);
-  }
-
-  public static byte[] doPartialNDN(Partial partial, byte[] bytes, StringBuilder response) {
-    if (null != partial) {
-      int len = partial.computeLength(bytes.length);
-      int start = partial.computeStart(bytes.length);
-      byte[] newBytes = new byte[len];
-      System.arraycopy(bytes, start, newBytes, 0, len);
-      bytes = newBytes;
-      response.append('<').append(partial.start).append('>');
-    }
-    return bytes;
-  }
-
-  public static void addLiteralNDN(byte[] bytes, StringBuilder response) {
-    response.append('{');
-    response.append(bytes.length);
-    response.append('}');
-    response.append("\r\n");
-
-    for (byte b : bytes) {
-      response.append((char) b);
-    }
-  }
-
-  public static String[] extractHeaderListNDN(String headerList, int prefixLen) {
-    // Remove the trailing and leading ')('
-    String tmp = headerList.substring(prefixLen + 1, headerList.length() - 1);
-    return splitNDN(tmp, " ");
-  }
-
-  public static String[] splitNDN(String value, String delimiter) {
-    List<String> strings = new ArrayList<>();
-    int startPos = 0;
-    int delimPos;
-    while ((delimPos = value.indexOf(delimiter, startPos)) != -1) {
-      String sub = value.substring(startPos, delimPos);
-      strings.add(sub);
-      startPos = delimPos + 1;
-    }
-    String sub = value.substring(startPos);
-    strings.add(sub);
-
-    return strings.toArray(new String[strings.size()]);
-  }
-
-  public static void addHeadersNDN(Enumeration<?> inum, StringBuilder response, Partial partial) {
-    StringBuilder buf = new StringBuilder();
-
-    int count = 0;
-    while (inum.hasMoreElements()) {
-      String line = (String) inum.nextElement();
-      count += line.length() + 2;
-      buf.append(line).append("\r\n");
     }
 
-    if (null != partial) {
-      final String partialContent = buf.toString();
-      int len = partial.computeLength(partialContent.length()); // TODO : Charset?
-      int start = partial.computeStart(partialContent.length());
+    public static void handleBodyFetchNDN(MimeMessage mimeMessage,
+                                          String sectionSpecifier,
+                                          Partial partial,
+                                          StringBuilder response)
+            throws IOException, MessagingException {
 
-      response.append('<').append(partial.start).append('>');
-      response.append(" {");
-      response.append(len);
-      response.append('}');
-      response.append("\r\n");
+        System.out.println("Fetching body part for section specifier " + sectionSpecifier +
+                " and mime message (contentType=" + mimeMessage.getContentType());
 
-      response.append(partialContent.substring(start, start + len));
-    } else {
-      response.append("{");
-      response.append(count);
-      response.append('}');
-      response.append("\r\n");
+        if (sectionSpecifier.length() == 0) {
+            // TODO - need to use an InputStream from the response here.
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            mimeMessage.writeTo(bout);
+            byte[] bytes = bout.toByteArray();
+            bytes = doPartialNDN(partial, bytes, response);
+            addLiteralNDN(bytes, response);
+        } else if ("HEADER".equalsIgnoreCase(sectionSpecifier)) {
+            Enumeration<?> inum = mimeMessage.getAllHeaderLines();
+            addHeadersNDN(inum, response, partial);
+        } else if (sectionSpecifier.startsWith("HEADER.FIELDS.NOT")) {
+            String[] excludeNames = extractHeaderListNDN(sectionSpecifier, "HEADER.FIELDS.NOT".length());
+            Enumeration<?> inum = mimeMessage.getNonMatchingHeaderLines(excludeNames);
+            addHeadersNDN(inum, response, partial);
+        } else if (sectionSpecifier.startsWith("HEADER.FIELDS ")) {
+            String[] includeNames = extractHeaderListNDN(sectionSpecifier, "HEADER.FIELDS ".length());
+            Enumeration<?> inum = mimeMessage.getMatchingHeaderLines(includeNames);
+            addHeadersNDN(inum, response, partial);
+        } else if (sectionSpecifier.endsWith("MIME")) {
+            String[] strs = sectionSpecifier.trim().split("\\.");
+            int partNumber = Integer.parseInt(strs[0]) - 1;
+            MimeMultipart mp = (MimeMultipart) mimeMessage.getContent();
+            byte[] bytes = GreenMailUtil.getHeaderAsBytes(mp.getBodyPart(partNumber));
+            bytes = doPartialNDN(partial, bytes, response);
+            addLiteralNDN(bytes, response);
+        } else if ("TEXT".equalsIgnoreCase(sectionSpecifier)) {
+            handleBodyFetchForTextNDN(mimeMessage, partial, response);
+        } else {
+            Object content = mimeMessage.getContent();
+            if (content instanceof String) {
+                handleBodyFetchForTextNDN(mimeMessage, partial, response);
+            } else {
+                MimeMultipart mp = (MimeMultipart) content;
+                BodyPart part = null;
 
-      response.append(buf);
+                // Find part by number spec, eg "1" or "2.1" or "4.3.1" ...
+                String spec = sectionSpecifier;
+
+                int dotIdx = spec.indexOf('.');
+                String pre = dotIdx < 0 ? spec : spec.substring(0, dotIdx);
+                while (null != pre && NUMBER_MATCHER.matcher(pre).matches()) {
+                    int partNumber = Integer.parseInt(pre) - 1;
+                    if (null == part) {
+                        part = mp.getBodyPart(partNumber);
+                    } else {
+                        // Content must be multipart
+                        part = ((Multipart) part.getContent()).getBodyPart(partNumber);
+                    }
+
+                    dotIdx = spec.indexOf('.');
+                    if (dotIdx > 0) { // Another sub part index?
+                        spec = spec.substring(dotIdx + 1);
+                        pre = spec.substring(0, dotIdx);
+                    } else {
+                        pre = null;
+                    }
+                }
+
+                if (null == part) {
+                    throw new IllegalStateException("Got null for " + sectionSpecifier);
+                }
+
+                // A bit optimistic to only cover theses cases ... TODO
+                if ("message/rfc822".equalsIgnoreCase(part.getContentType())) {
+                    handleBodyFetchNDN((MimeMessage) part.getContent(), spec, partial, response);
+                } else if ("TEXT".equalsIgnoreCase(spec)) {
+                    handleBodyFetchForTextNDN(mimeMessage, partial, response);
+                } else {
+                    byte[] bytes = GreenMailUtil.getBodyAsBytes(part);
+                    bytes = doPartialNDN(partial, bytes, response);
+                    addLiteralNDN(bytes, response);
+                }
+            }
+        }
     }
-  }
 
-  private String getMessageData(boolean useUids, FetchRequest fetch, ImapSessionFolder mailbox, long uid) throws FolderException, ProtocolException {
-    StoredMessage storedMessage = mailbox.getMessage(uid);
-    return outputMessage(fetch, storedMessage, mailbox, useUids);
-  }
+    public static void handleBodyFetchForTextNDN(MimeMessage mimeMessage, Partial partial, StringBuilder response) {
+        // TODO - need to use an InputStream from the response here.
+        // TODO - this is a hack. To get just the body content, I'm using a null
+        // input stream to take the headers. Need to have a way of ignoring headers.
 
-  private String getMessageDataNdn(boolean useUids, FetchRequest fetch,
-                                   IMAPFolder mailbox, long uid)
-      throws FolderException, ProtocolException, MessagingException {
-    MimeMessage mimeMessage = (MimeMessage) mailbox.getMessageByUID(uid);
-    IMAPMessage imapMessage = (IMAPMessage) mailbox.getMessageByUID(uid);
+        byte[] bytes = GreenMailUtil.getBodyAsBytes(mimeMessage);
+        bytes = doPartialNDN(partial, bytes, response);
+        addLiteralNDN(bytes, response);
+    }
+
+    public static byte[] doPartialNDN(Partial partial, byte[] bytes, StringBuilder response) {
+        if (null != partial) {
+            int len = partial.computeLength(bytes.length);
+            int start = partial.computeStart(bytes.length);
+            byte[] newBytes = new byte[len];
+            System.arraycopy(bytes, start, newBytes, 0, len);
+            bytes = newBytes;
+            response.append('<').append(partial.start).append('>');
+        }
+        return bytes;
+    }
+
+    public static void addLiteralNDN(byte[] bytes, StringBuilder response) {
+        response.append('{');
+        response.append(bytes.length);
+        response.append('}');
+        response.append("\r\n");
+
+        for (byte b : bytes) {
+            response.append((char) b);
+        }
+    }
+
+    public static String[] extractHeaderListNDN(String headerList, int prefixLen) {
+        // Remove the trailing and leading ')('
+        String tmp = headerList.substring(prefixLen + 1, headerList.length() - 1);
+        return splitNDN(tmp, " ");
+    }
+
+    public static String[] splitNDN(String value, String delimiter) {
+        List<String> strings = new ArrayList<>();
+        int startPos = 0;
+        int delimPos;
+        while ((delimPos = value.indexOf(delimiter, startPos)) != -1) {
+            String sub = value.substring(startPos, delimPos);
+            strings.add(sub);
+            startPos = delimPos + 1;
+        }
+        String sub = value.substring(startPos);
+        strings.add(sub);
+
+        return strings.toArray(new String[strings.size()]);
+    }
+
+    public static void addHeadersNDN(Enumeration<?> inum, StringBuilder response, Partial partial) {
+        StringBuilder buf = new StringBuilder();
+
+        int count = 0;
+        while (inum.hasMoreElements()) {
+            String line = (String) inum.nextElement();
+            count += line.length() + 2;
+            buf.append(line).append("\r\n");
+        }
+
+        if (null != partial) {
+            final String partialContent = buf.toString();
+            int len = partial.computeLength(partialContent.length()); // TODO : Charset?
+            int start = partial.computeStart(partialContent.length());
+
+            response.append('<').append(partial.start).append('>');
+            response.append(" {");
+            response.append(len);
+            response.append('}');
+            response.append("\r\n");
+
+            response.append(partialContent.substring(start, start + len));
+        } else {
+            response.append("{");
+            response.append(count);
+            response.append('}');
+            response.append("\r\n");
+
+            response.append(buf);
+        }
+    }
+
+    private String getMessageData(boolean useUids, FetchRequest fetch, ImapSessionFolder mailbox, long uid) throws FolderException, ProtocolException {
+        StoredMessage storedMessage = mailbox.getMessage(uid);
+        return outputMessage(fetch, storedMessage, mailbox, useUids);
+    }
+
+    private String getMessageDataNdn(boolean useUids, FetchRequest fetch,
+                                     IMAPFolder mailbox, long uid)
+            throws FolderException, ProtocolException, MessagingException {
+        MimeMessage mimeMessage = (MimeMessage) mailbox.getMessageByUID(uid);
+        IMAPMessage imapMessage = (IMAPMessage) mailbox.getMessageByUID(uid);
 
 //     mailbox.getMessageByUID(uid)
-    System.out.println("Entering attribute *******");
-    SimpleMessageAttributes attributes =
-        new SimpleMessageAttributes(mimeMessage, mimeMessage.getReceivedDate());
-    System.out.println("Exiting attribute >>>>>>>");
-    return outputMessageNdn(fetch, mimeMessage, mailbox, useUids, uid, attributes);
-  }
-
-  private String outputMessageNdn(FetchRequest fetch, MimeMessage message, IMAPFolder folder,
-                                  boolean useUids, long uid, SimpleMessageAttributes attributes)
-      throws FolderException, ProtocolException, MessagingException {
-    // Check if this fetch will cause the "SEEN" flag to be set on this message
-    // If so, update the flags, and ensure that a flags response is included in the response.
-    boolean ensureFlagsResponse = false;
-    if (fetch.isSetSeen() && !message.isSet(Flags.Flag.SEEN)) {
-      //folder.setFlags(FLAGS_SEEN, true, uid, folder, useUids);
-      message.setFlags(FLAGS_SEEN, true);
-      ensureFlagsResponse = true;
+        System.out.println("Entering attribute *******");
+        SimpleMessageAttributes attributes =
+                new SimpleMessageAttributes(mimeMessage, mimeMessage.getReceivedDate());
+        System.out.println("Exiting attribute >>>>>>>");
+        return outputMessageNdn(fetch, mimeMessage, mailbox, useUids, uid, attributes);
     }
 
-    StringBuilder response = new StringBuilder();
-
-    // FLAGS response
-    if (fetch.flags || ensureFlagsResponse) {
-      response.append(" FLAGS ");
-      response.append(MessageFlags.format(message.getFlags()));
-    }
-
-    // INTERNALDATE response
-    if (fetch.internalDate) {
-      response.append(" INTERNALDATE \"");
-      response.append(INTERNALDATE.format(message.getReceivedDate()));
-      response.append('\"');
-    }
-
-    // RFC822.SIZE response
-    if (fetch.size) {
-      response.append(" RFC822.SIZE ");
-      response.append(message.getSize());
-    }
-
-    // ENVELOPE response
-    if (fetch.envelope) {
-      response.append(" ENVELOPE ");
-      response.append(attributes.getEnvelope());
-    }
-
-    // BODY response
-    if (fetch.body) {
-      response.append(" BODY ");
-      response.append(attributes.getBodyStructure(false));
-    }
-
-    // BODYSTRUCTURE response
-    if (fetch.bodyStructure) {
-      response.append(" BODYSTRUCTURE ");
-      response.append(attributes.getBodyStructure(true));
-    }
-
-    // UID response
-    if (fetch.uid) {
-      response.append(" UID ");
-      response.append(uid);
-    }
-
-    // BODY part responses.
-    Collection<BodyFetchElement> elements = fetch.getBodyElements();
-    for (BodyFetchElement fetchElement : elements) {
-      response.append(SP);
-      response.append(fetchElement.getResponseName());
-      final Partial partial = fetchElement.getPartial();
-      if (null == partial) {
-        response.append(SP);
-      }
-
-      // Various mechanisms for returning message body.
-      String sectionSpecifier = fetchElement.getParameters();
-
-      MimeMessage mimeMessage = message;
-      try {
-        handleBodyFetch(mimeMessage, sectionSpecifier, partial, response);
-      } catch (Exception e) {
-        throw new FolderException(e);
-      }
-    }
-
-    if (response.length() > 0) {
-      // Remove the leading " ".
-      return response.substring(1);
-    } else {
-      return "";
-    }
-  }
-
-  private String outputMessage(FetchRequest fetch, StoredMessage message,
-                               ImapSessionFolder folder, boolean useUids)
-      throws FolderException, ProtocolException {
-    // Check if this fetch will cause the "SEEN" flag to be set on this message
-    // If so, update the flags, and ensure that a flags response is included in the response.
-    boolean ensureFlagsResponse = false;
-    if (fetch.isSetSeen() && !message.isSet(Flags.Flag.SEEN)) {
-      folder.setFlags(FLAGS_SEEN, true, message.getUid(), folder, useUids);
-      message.setFlags(FLAGS_SEEN, true);
-      ensureFlagsResponse = true;
-    }
-
-    StringBuilder response = new StringBuilder();
-
-    // FLAGS response
-    if (fetch.flags || ensureFlagsResponse) {
-      response.append(" FLAGS ");
-      response.append(MessageFlags.format(message.getFlags()));
-    }
-
-    // INTERNALDATE response
-    if (fetch.internalDate) {
-      response.append(" INTERNALDATE \"");
-      response.append(message.getAttributes().getReceivedDateAsString());
-      response.append('\"');
-    }
-
-    // RFC822.SIZE response
-    if (fetch.size) {
-      response.append(" RFC822.SIZE ");
-      response.append(message.getAttributes().getSize());
-    }
-
-    // ENVELOPE response
-    if (fetch.envelope) {
-      response.append(" ENVELOPE ");
-      response.append(message.getAttributes().getEnvelope());
-    }
-
-    // BODY response
-    if (fetch.body) {
-      response.append(" BODY ");
-      response.append(message.getAttributes().getBodyStructure(false));
-    }
-
-    // BODYSTRUCTURE response
-    if (fetch.bodyStructure) {
-      response.append(" BODYSTRUCTURE ");
-      response.append(message.getAttributes().getBodyStructure(true));
-    }
-
-    // UID response
-    if (fetch.uid) {
-      response.append(" UID ");
-      response.append(message.getUid());
-    }
-
-    // BODY part responses.
-    Collection<BodyFetchElement> elements = fetch.getBodyElements();
-    for (BodyFetchElement fetchElement : elements) {
-      response.append(SP);
-      response.append(fetchElement.getResponseName());
-      final Partial partial = fetchElement.getPartial();
-      if (null == partial) {
-        response.append(SP);
-      }
-
-      // Various mechanisms for returning message body.
-      String sectionSpecifier = fetchElement.getParameters();
-
-      MimeMessage mimeMessage = message.getMimeMessage();
-      try {
-        handleBodyFetch(mimeMessage, sectionSpecifier, partial, response);
-      } catch (Exception e) {
-        throw new FolderException(e);
-      }
-    }
-
-    if (response.length() > 0) {
-      // Remove the leading " ".
-      return response.substring(1);
-    } else {
-      return "";
-    }
-  }
-
-
-  private void handleBodyFetch(MimeMessage mimeMessage,
-                               String sectionSpecifier,
-                               Partial partial,
-                               StringBuilder response) throws IOException, MessagingException {
-    if (log.isDebugEnabled()) {
-      log.debug("Fetching body part for section specifier " + sectionSpecifier +
-          " and mime message (contentType=" + mimeMessage.getContentType());
-    }
-
-    if (sectionSpecifier.length() == 0) {
-      // TODO - need to use an InputStream from the response here.
-      ByteArrayOutputStream bout = new ByteArrayOutputStream();
-      mimeMessage.writeTo(bout);
-      byte[] bytes = bout.toByteArray();
-      bytes = doPartial(partial, bytes, response);
-      addLiteral(bytes, response);
-    } else if ("HEADER".equalsIgnoreCase(sectionSpecifier)) {
-      Enumeration<?> inum = mimeMessage.getAllHeaderLines();
-      addHeadersNDN(inum, response, partial);
-    } else if (sectionSpecifier.startsWith("HEADER.FIELDS.NOT")) {
-      String[] excludeNames = extractHeaderListNDN(sectionSpecifier, "HEADER.FIELDS.NOT".length());
-      Enumeration<?> inum = mimeMessage.getNonMatchingHeaderLines(excludeNames);
-      addHeadersNDN(inum, response, partial);
-    } else if (sectionSpecifier.startsWith("HEADER.FIELDS ")) {
-      String[] includeNames = extractHeaderListNDN(sectionSpecifier, "HEADER.FIELDS ".length());
-      Enumeration<?> inum = mimeMessage.getMatchingHeaderLines(includeNames);
-      addHeadersNDN(inum, response, partial);
-    } else if (sectionSpecifier.endsWith("MIME")) {
-      String[] strs = sectionSpecifier.trim().split("\\.");
-      int partNumber = Integer.parseInt(strs[0]) - 1;
-      MimeMultipart mp = (MimeMultipart) mimeMessage.getContent();
-      byte[] bytes = GreenMailUtil.getHeaderAsBytes(mp.getBodyPart(partNumber));
-      bytes = doPartial(partial, bytes, response);
-      addLiteral(bytes, response);
-    } else if ("TEXT".equalsIgnoreCase(sectionSpecifier)) {
-      handleBodyFetchForText(mimeMessage, partial, response);
-    } else {
-      Object content = mimeMessage.getContent();
-      if (content instanceof String) {
-        handleBodyFetchForText(mimeMessage, partial, response);
-      } else {
-        MimeMultipart mp = (MimeMultipart) content;
-        BodyPart part = null;
-
-        // Find part by number spec, eg "1" or "2.1" or "4.3.1" ...
-        String spec = sectionSpecifier;
-
-        int dotIdx = spec.indexOf('.');
-        String pre = dotIdx < 0 ? spec : spec.substring(0, dotIdx);
-        while (null != pre && NUMBER_MATCHER.matcher(pre).matches()) {
-          int partNumber = Integer.parseInt(pre) - 1;
-          if (null == part) {
-            part = mp.getBodyPart(partNumber);
-          } else {
-            // Content must be multipart
-            part = ((Multipart) part.getContent()).getBodyPart(partNumber);
-          }
-
-          dotIdx = spec.indexOf('.');
-          if (dotIdx > 0) { // Another sub part index?
-            spec = spec.substring(dotIdx + 1);
-            pre = spec.substring(0, dotIdx);
-          } else {
-            pre = null;
-          }
+    private String outputMessageNdn(FetchRequest fetch, MimeMessage message, IMAPFolder folder,
+                                    boolean useUids, long uid, SimpleMessageAttributes attributes)
+            throws FolderException, ProtocolException, MessagingException {
+        // Check if this fetch will cause the "SEEN" flag to be set on this message
+        // If so, update the flags, and ensure that a flags response is included in the response.
+        boolean ensureFlagsResponse = false;
+        if (fetch.isSetSeen() && !message.isSet(Flags.Flag.SEEN)) {
+            //folder.setFlags(FLAGS_SEEN, true, uid, folder, useUids);
+            message.setFlags(FLAGS_SEEN, true);
+            ensureFlagsResponse = true;
         }
 
-        if (null == part) {
-          throw new IllegalStateException("Got null for " + sectionSpecifier);
+        StringBuilder response = new StringBuilder();
+
+        // FLAGS response
+        if (fetch.flags || ensureFlagsResponse) {
+            response.append(" FLAGS ");
+            response.append(MessageFlags.format(message.getFlags()));
         }
 
-        // A bit optimistic to only cover theses cases ... TODO
-        if ("message/rfc822".equalsIgnoreCase(part.getContentType())) {
-          handleBodyFetch((MimeMessage) part.getContent(), spec, partial, response);
-        } else if ("TEXT".equalsIgnoreCase(spec)) {
-          handleBodyFetchForText(mimeMessage, partial, response);
+        // INTERNALDATE response
+        if (fetch.internalDate) {
+            response.append(" INTERNALDATE \"");
+            response.append(INTERNALDATE.format(message.getReceivedDate()));
+            response.append('\"');
+        }
+
+        // RFC822.SIZE response
+        if (fetch.size) {
+            response.append(" RFC822.SIZE ");
+            response.append(message.getSize());
+        }
+
+        // ENVELOPE response
+        if (fetch.envelope) {
+            response.append(" ENVELOPE ");
+            response.append(attributes.getEnvelope());
+        }
+
+        // BODY response
+        if (fetch.body) {
+            response.append(" BODY ");
+            response.append(attributes.getBodyStructure(false));
+        }
+
+        // BODYSTRUCTURE response
+        if (fetch.bodyStructure) {
+            response.append(" BODYSTRUCTURE ");
+            response.append(attributes.getBodyStructure(true));
+        }
+
+        // UID response
+        if (fetch.uid) {
+            response.append(" UID ");
+            response.append(uid);
+        }
+
+        // BODY part responses.
+        Collection<BodyFetchElement> elements = fetch.getBodyElements();
+        for (BodyFetchElement fetchElement : elements) {
+            response.append(SP);
+            response.append(fetchElement.getResponseName());
+            final Partial partial = fetchElement.getPartial();
+            if (null == partial) {
+                response.append(SP);
+            }
+
+            // Various mechanisms for returning message body.
+            String sectionSpecifier = fetchElement.getParameters();
+
+            MimeMessage mimeMessage = message;
+            try {
+                handleBodyFetch(mimeMessage, sectionSpecifier, partial, response);
+            } catch (Exception e) {
+                throw new FolderException(e);
+            }
+        }
+
+        if (response.length() > 0) {
+            // Remove the leading " ".
+            return response.substring(1);
         } else {
-          byte[] bytes = GreenMailUtil.getBodyAsBytes(part);
-          bytes = doPartial(partial, bytes, response);
-          addLiteral(bytes, response);
+            return "";
         }
-      }
-    }
-  }
-
-  private void handleBodyFetchForText(MimeMessage mimeMessage, Partial partial, StringBuilder response) {
-    // TODO - need to use an InputStream from the response here.
-    // TODO - this is a hack. To get just the body content, I'm using a null
-    // input stream to take the headers. Need to have a way of ignoring headers.
-
-    byte[] bytes = GreenMailUtil.getBodyAsBytes(mimeMessage);
-    bytes = doPartial(partial, bytes, response);
-    addLiteral(bytes, response);
-  }
-
-  private byte[] doPartial(Partial partial, byte[] bytes, StringBuilder response) {
-    if (null != partial) {
-      int len = partial.computeLength(bytes.length);
-      int start = partial.computeStart(bytes.length);
-      byte[] newBytes = new byte[len];
-      System.arraycopy(bytes, start, newBytes, 0, len);
-      bytes = newBytes;
-      response.append('<').append(partial.start).append('>');
-    }
-    return bytes;
-  }
-
-  private void addLiteral(byte[] bytes, StringBuilder response) {
-    response.append('{');
-    response.append(bytes.length);
-    response.append('}');
-    response.append("\r\n");
-
-    for (byte b : bytes) {
-      response.append((char) b);
-    }
-  }
-
-  // TODO should do this at parse time.
-  private String[] extractHeaderList(String headerList, int prefixLen) {
-    // Remove the trailing and leading ')('
-    String tmp = headerList.substring(prefixLen + 1, headerList.length() - 1);
-    return split(tmp, " ");
-  }
-
-  private String[] split(String value, String delimiter) {
-    List<String> strings = new ArrayList<>();
-    int startPos = 0;
-    int delimPos;
-    while ((delimPos = value.indexOf(delimiter, startPos)) != -1) {
-      String sub = value.substring(startPos, delimPos);
-      strings.add(sub);
-      startPos = delimPos + 1;
-    }
-    String sub = value.substring(startPos);
-    strings.add(sub);
-
-    return strings.toArray(new String[strings.size()]);
-  }
-
-  private void addHeaders(Enumeration<?> inum, StringBuilder response, Partial partial) {
-    StringBuilder buf = new StringBuilder();
-
-    int count = 0;
-    while (inum.hasMoreElements()) {
-      String line = (String) inum.nextElement();
-      count += line.length() + 2;
-      buf.append(line).append("\r\n");
     }
 
-    if (null != partial) {
-      final String partialContent = buf.toString();
-      int len = partial.computeLength(partialContent.length()); // TODO : Charset?
-      int start = partial.computeStart(partialContent.length());
-
-      response.append('<').append(partial.start).append('>');
-      response.append(" {");
-      response.append(len);
-      response.append('}');
-      response.append("\r\n");
-
-      response.append(partialContent.substring(start, start + len));
-    } else {
-      response.append("{");
-      response.append(count);
-      response.append('}');
-      response.append("\r\n");
-
-      response.append(buf);
-    }
-  }
-
-  private static class FetchCommandParser extends CommandParser {
-
-    FetchRequest fetchRequest(ImapRequestLineReader request)
-        throws ProtocolException {
-      FetchRequest fetch = new FetchRequest();
-
-      // Parenthesis optional if single 'atom'
-      char next = nextNonSpaceChar(request);
-      boolean parenthesis = '(' == next;
-      if (parenthesis) {
-        consumeChar(request, '(');
-
-        next = nextNonSpaceChar(request);
-        while (next != ')') {
-          addNextElement(request, fetch);
-          next = nextNonSpaceChar(request);
+    private String outputMessage(FetchRequest fetch, StoredMessage message,
+                                 ImapSessionFolder folder, boolean useUids)
+            throws FolderException, ProtocolException {
+        // Check if this fetch will cause the "SEEN" flag to be set on this message
+        // If so, update the flags, and ensure that a flags response is included in the response.
+        boolean ensureFlagsResponse = false;
+        if (fetch.isSetSeen() && !message.isSet(Flags.Flag.SEEN)) {
+            folder.setFlags(FLAGS_SEEN, true, message.getUid(), folder, useUids);
+            message.setFlags(FLAGS_SEEN, true);
+            ensureFlagsResponse = true;
         }
 
-        consumeChar(request, ')');
-      } else {
-        // Single item
-        addNextElement(request, fetch);
-      }
+        StringBuilder response = new StringBuilder();
 
-      return fetch;
-    }
+        // FLAGS response
+        if (fetch.flags || ensureFlagsResponse) {
+            response.append(" FLAGS ");
+            response.append(MessageFlags.format(message.getFlags()));
+        }
 
-    private void addNextElement(ImapRequestLineReader command, FetchRequest fetch)
-        throws ProtocolException {
-      char next = nextCharInLine(command);
-      StringBuilder element = new StringBuilder();
-      while (next != ' ' && next != '[' && next != ')' && !isCrOrLf(next)) {
-        element.append(next);
-        command.consume();
-        next = command.nextChar();
-      }
-      String name = element.toString();
-      // Simple elements with no '[]' parameters.
-      if (next == ' ' || next == ')' || isCrOrLf(next)) {
-        if ("FAST".equalsIgnoreCase(name)) {
-          fetch.flags = true;
-          fetch.internalDate = true;
-          fetch.size = true;
-        } else if ("FULL".equalsIgnoreCase(name)) {
-          fetch.flags = true;
-          fetch.internalDate = true;
-          fetch.size = true;
-          fetch.envelope = true;
-          fetch.body = true;
-        } else if ("ALL".equalsIgnoreCase(name)) {
-          fetch.flags = true;
-          fetch.internalDate = true;
-          fetch.size = true;
-          fetch.envelope = true;
-        } else if ("FLAGS".equalsIgnoreCase(name)) {
-          fetch.flags = true;
-        } else if ("RFC822.SIZE".equalsIgnoreCase(name)) {
-          fetch.size = true;
-        } else if ("ENVELOPE".equalsIgnoreCase(name)) {
-          fetch.envelope = true;
-        } else if ("INTERNALDATE".equalsIgnoreCase(name)) {
-          fetch.internalDate = true;
-        } else if ("BODY".equalsIgnoreCase(name)) {
-          fetch.body = true;
-        } else if ("BODYSTRUCTURE".equalsIgnoreCase(name)) {
-          fetch.bodyStructure = true;
-        } else if ("UID".equalsIgnoreCase(name)) {
-          fetch.uid = true;
-        } else if ("RFC822".equalsIgnoreCase(name)) {
-          fetch.add(new BodyFetchElement("RFC822", ""), false);
-        } else if ("RFC822.HEADER".equalsIgnoreCase(name)) {
-          fetch.add(new BodyFetchElement("RFC822.HEADER", "HEADER"), true);
-        } else if ("RFC822.TEXT".equalsIgnoreCase(name)) {
-          fetch.add(new BodyFetchElement("RFC822.TEXT", "TEXT"), false);
+        // INTERNALDATE response
+        if (fetch.internalDate) {
+            response.append(" INTERNALDATE \"");
+            response.append(message.getAttributes().getReceivedDateAsString());
+            response.append('\"');
+        }
+
+        // RFC822.SIZE response
+        if (fetch.size) {
+            response.append(" RFC822.SIZE ");
+            response.append(message.getAttributes().getSize());
+        }
+
+        // ENVELOPE response
+        if (fetch.envelope) {
+            response.append(" ENVELOPE ");
+            response.append(message.getAttributes().getEnvelope());
+        }
+
+        // BODY response
+        if (fetch.body) {
+            response.append(" BODY ");
+            response.append(message.getAttributes().getBodyStructure(false));
+        }
+
+        // BODYSTRUCTURE response
+        if (fetch.bodyStructure) {
+            response.append(" BODYSTRUCTURE ");
+            response.append(message.getAttributes().getBodyStructure(true));
+        }
+
+        // UID response
+        if (fetch.uid) {
+            response.append(" UID ");
+            response.append(message.getUid());
+        }
+
+        // BODY part responses.
+        Collection<BodyFetchElement> elements = fetch.getBodyElements();
+        for (BodyFetchElement fetchElement : elements) {
+            response.append(SP);
+            response.append(fetchElement.getResponseName());
+            final Partial partial = fetchElement.getPartial();
+            if (null == partial) {
+                response.append(SP);
+            }
+
+            // Various mechanisms for returning message body.
+            String sectionSpecifier = fetchElement.getParameters();
+
+            MimeMessage mimeMessage = message.getMimeMessage();
+            try {
+                handleBodyFetch(mimeMessage, sectionSpecifier, partial, response);
+            } catch (Exception e) {
+                throw new FolderException(e);
+            }
+        }
+
+        if (response.length() > 0) {
+            // Remove the leading " ".
+            return response.substring(1);
         } else {
-          throw new ProtocolException("Invalid fetch attribute: " + name);
+            return "";
         }
-      } else {
-        consumeChar(command, '[');
+    }
 
-        StringBuilder sectionIdentifier = new StringBuilder();
-        next = nextCharInLine(command);
-        while (next != ']') {
-          sectionIdentifier.append(next);
-          command.consume();
-          next = nextCharInLine(command);
-        }
-        consumeChar(command, ']');
 
-        String parameter = sectionIdentifier.toString();
-
-        Partial partial = null;
-        next = command.nextChar(); // Can be end of line if single option
-        if ('<' == next) { // Partial eg <2000> or <0.1000>
-          partial = parsePartial(command);
+    private void handleBodyFetch(MimeMessage mimeMessage,
+                                 String sectionSpecifier,
+                                 Partial partial,
+                                 StringBuilder response) throws IOException, MessagingException {
+        if (log.isDebugEnabled()) {
+            log.debug("Fetching body part for section specifier " + sectionSpecifier +
+                    " and mime message (contentType=" + mimeMessage.getContentType());
         }
 
-        if ("BODY".equalsIgnoreCase(name)) {
-          fetch.add(new BodyFetchElement("BODY[" + parameter + ']', parameter, partial), false);
-        } else if ("BODY.PEEK".equalsIgnoreCase(name)) {
-          fetch.add(new BodyFetchElement("BODY[" + parameter + ']', parameter, partial), true);
+        if (sectionSpecifier.length() == 0) {
+            // TODO - need to use an InputStream from the response here.
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            mimeMessage.writeTo(bout);
+            byte[] bytes = bout.toByteArray();
+            bytes = doPartial(partial, bytes, response);
+            addLiteral(bytes, response);
+        } else if ("HEADER".equalsIgnoreCase(sectionSpecifier)) {
+            Enumeration<?> inum = mimeMessage.getAllHeaderLines();
+            addHeadersNDN(inum, response, partial);
+        } else if (sectionSpecifier.startsWith("HEADER.FIELDS.NOT")) {
+            String[] excludeNames = extractHeaderListNDN(sectionSpecifier, "HEADER.FIELDS.NOT".length());
+            Enumeration<?> inum = mimeMessage.getNonMatchingHeaderLines(excludeNames);
+            addHeadersNDN(inum, response, partial);
+        } else if (sectionSpecifier.startsWith("HEADER.FIELDS ")) {
+            String[] includeNames = extractHeaderListNDN(sectionSpecifier, "HEADER.FIELDS ".length());
+            Enumeration<?> inum = mimeMessage.getMatchingHeaderLines(includeNames);
+            addHeadersNDN(inum, response, partial);
+        } else if (sectionSpecifier.endsWith("MIME")) {
+            String[] strs = sectionSpecifier.trim().split("\\.");
+            int partNumber = Integer.parseInt(strs[0]) - 1;
+            MimeMultipart mp = (MimeMultipart) mimeMessage.getContent();
+            byte[] bytes = GreenMailUtil.getHeaderAsBytes(mp.getBodyPart(partNumber));
+            bytes = doPartial(partial, bytes, response);
+            addLiteral(bytes, response);
+        } else if ("TEXT".equalsIgnoreCase(sectionSpecifier)) {
+            handleBodyFetchForText(mimeMessage, partial, response);
         } else {
-          throw new ProtocolException("Invalid fetch attribute: " + name + "[]");
+            Object content = mimeMessage.getContent();
+            if (content instanceof String) {
+                handleBodyFetchForText(mimeMessage, partial, response);
+            } else {
+                MimeMultipart mp = (MimeMultipart) content;
+                BodyPart part = null;
+
+                // Find part by number spec, eg "1" or "2.1" or "4.3.1" ...
+                String spec = sectionSpecifier;
+
+                int dotIdx = spec.indexOf('.');
+                String pre = dotIdx < 0 ? spec : spec.substring(0, dotIdx);
+                while (null != pre && NUMBER_MATCHER.matcher(pre).matches()) {
+                    int partNumber = Integer.parseInt(pre) - 1;
+                    if (null == part) {
+                        part = mp.getBodyPart(partNumber);
+                    } else {
+                        // Content must be multipart
+                        part = ((Multipart) part.getContent()).getBodyPart(partNumber);
+                    }
+
+                    dotIdx = spec.indexOf('.');
+                    if (dotIdx > 0) { // Another sub part index?
+                        spec = spec.substring(dotIdx + 1);
+                        pre = spec.substring(0, dotIdx);
+                    } else {
+                        pre = null;
+                    }
+                }
+
+                if (null == part) {
+                    throw new IllegalStateException("Got null for " + sectionSpecifier);
+                }
+
+                // A bit optimistic to only cover theses cases ... TODO
+                if ("message/rfc822".equalsIgnoreCase(part.getContentType())) {
+                    handleBodyFetch((MimeMessage) part.getContent(), spec, partial, response);
+                } else if ("TEXT".equalsIgnoreCase(spec)) {
+                    handleBodyFetchForText(mimeMessage, partial, response);
+                } else {
+                    byte[] bytes = GreenMailUtil.getBodyAsBytes(part);
+                    bytes = doPartial(partial, bytes, response);
+                    addLiteral(bytes, response);
+                }
+            }
         }
-      }
     }
 
-    private Partial parsePartial(ImapRequestLineReader command) throws ProtocolException {
-      consumeChar(command, '<');
-      int size = (int) consumeLong(command); // Assume <start>
-      int start = 0;
-      if (command.nextChar() == '.') {
-        consumeChar(command, '.');
-        start = size; // Assume <start.size> , so switch fields
-        size = (int) consumeLong(command);
-      }
-      consumeChar(command, '>');
-      return Partial.as(start, size);
+    private void handleBodyFetchForText(MimeMessage mimeMessage, Partial partial, StringBuilder response) {
+        // TODO - need to use an InputStream from the response here.
+        // TODO - this is a hack. To get just the body content, I'm using a null
+        // input stream to take the headers. Need to have a way of ignoring headers.
+
+        byte[] bytes = GreenMailUtil.getBodyAsBytes(mimeMessage);
+        bytes = doPartial(partial, bytes, response);
+        addLiteral(bytes, response);
     }
 
-    private char nextCharInLine(ImapRequestLineReader request)
-        throws ProtocolException {
-      char next = request.nextChar();
-      if (isCrOrLf(next)) {
-        request.dumpLine();
-        throw new ProtocolException("Unexpected end of line (CR or LF).");
-      }
-      return next;
+    private byte[] doPartial(Partial partial, byte[] bytes, StringBuilder response) {
+        if (null != partial) {
+            int len = partial.computeLength(bytes.length);
+            int start = partial.computeStart(bytes.length);
+            byte[] newBytes = new byte[len];
+            System.arraycopy(bytes, start, newBytes, 0, len);
+            bytes = newBytes;
+            response.append('<').append(partial.start).append('>');
+        }
+        return bytes;
     }
 
-    private char nextNonSpaceChar(ImapRequestLineReader request)
-        throws ProtocolException {
-      char next = request.nextChar();
-      while (next == ' ') {
-        request.consume();
-        next = request.nextChar();
-      }
-      return next;
+    private void addLiteral(byte[] bytes, StringBuilder response) {
+        response.append('{');
+        response.append(bytes.length);
+        response.append('}');
+        response.append("\r\n");
+
+        for (byte b : bytes) {
+            response.append((char) b);
+        }
     }
 
-  }
-
-  private static class FetchRequest {
-    boolean flags;
-    boolean uid;
-    boolean internalDate;
-    boolean size;
-    boolean envelope;
-    boolean body;
-    boolean bodyStructure;
-
-    private boolean setSeen = false;
-
-    private Set<BodyFetchElement> bodyElements = new HashSet<>();
-
-    public Collection<BodyFetchElement> getBodyElements() {
-      return bodyElements;
+    // TODO should do this at parse time.
+    private String[] extractHeaderList(String headerList, int prefixLen) {
+        // Remove the trailing and leading ')('
+        String tmp = headerList.substring(prefixLen + 1, headerList.length() - 1);
+        return split(tmp, " ");
     }
 
-    public boolean isSetSeen() {
-      return setSeen;
+    private String[] split(String value, String delimiter) {
+        List<String> strings = new ArrayList<>();
+        int startPos = 0;
+        int delimPos;
+        while ((delimPos = value.indexOf(delimiter, startPos)) != -1) {
+            String sub = value.substring(startPos, delimPos);
+            strings.add(sub);
+            startPos = delimPos + 1;
+        }
+        String sub = value.substring(startPos);
+        strings.add(sub);
+
+        return strings.toArray(new String[strings.size()]);
     }
 
-    public void add(BodyFetchElement element, boolean peek) {
-      if (!peek) {
-        setSeen = true;
-      }
-      bodyElements.add(element);
-    }
-  }
+    private void addHeaders(Enumeration<?> inum, StringBuilder response, Partial partial) {
+        StringBuilder buf = new StringBuilder();
 
-  /**
-   * See https://tools.ietf.org/html/rfc3501#page-55 : partial
-   */
-  private static class Partial {
-    int start,
-        size;
+        int count = 0;
+        while (inum.hasMoreElements()) {
+            String line = (String) inum.nextElement();
+            count += line.length() + 2;
+            buf.append(line).append("\r\n");
+        }
 
-    int computeLength(final int contentSize) {
-      if (size > 0) {
-        return Math.min(size, contentSize - start); // Only up to max available bytes
-      } else {
-        // First len bytes
-        return contentSize;
-      }
-    }
+        if (null != partial) {
+            final String partialContent = buf.toString();
+            int len = partial.computeLength(partialContent.length()); // TODO : Charset?
+            int start = partial.computeStart(partialContent.length());
 
-    int computeStart(final int contentSize) {
-      return Math.min(start, contentSize);
-    }
+            response.append('<').append(partial.start).append('>');
+            response.append(" {");
+            response.append(len);
+            response.append('}');
+            response.append("\r\n");
 
-    public static Partial as(int start, int size) {
-      Partial p = new Partial();
-      p.start = start;
-      p.size = size;
-      return p;
-    }
-  }
+            response.append(partialContent.substring(start, start + len));
+        } else {
+            response.append("{");
+            response.append(count);
+            response.append('}');
+            response.append("\r\n");
 
-  private static class BodyFetchElement {
-    private String name;
-    private String sectionIdentifier;
-    private Partial partial;
-
-    public BodyFetchElement(String name, String sectionIdentifier) {
-      this(name, sectionIdentifier, null);
+            response.append(buf);
+        }
     }
 
-    public BodyFetchElement(String name, String sectionIdentifier, Partial partial) {
-      this.name = name;
-      this.sectionIdentifier = sectionIdentifier;
-      this.partial = partial;
+    private static class FetchCommandParser extends CommandParser {
+
+        FetchRequest fetchRequest(ImapRequestLineReader request)
+                throws ProtocolException {
+            FetchRequest fetch = new FetchRequest();
+
+            // Parenthesis optional if single 'atom'
+            char next = nextNonSpaceChar(request);
+            boolean parenthesis = '(' == next;
+            if (parenthesis) {
+                consumeChar(request, '(');
+
+                next = nextNonSpaceChar(request);
+                while (next != ')') {
+                    addNextElement(request, fetch);
+                    next = nextNonSpaceChar(request);
+                }
+
+                consumeChar(request, ')');
+            } else {
+                // Single item
+                addNextElement(request, fetch);
+            }
+
+            return fetch;
+        }
+
+        private void addNextElement(ImapRequestLineReader command, FetchRequest fetch)
+                throws ProtocolException {
+            char next = nextCharInLine(command);
+            StringBuilder element = new StringBuilder();
+            while (next != ' ' && next != '[' && next != ')' && !isCrOrLf(next)) {
+                element.append(next);
+                command.consume();
+                next = command.nextChar();
+            }
+            String name = element.toString();
+            // Simple elements with no '[]' parameters.
+            if (next == ' ' || next == ')' || isCrOrLf(next)) {
+                if ("FAST".equalsIgnoreCase(name)) {
+                    fetch.flags = true;
+                    fetch.internalDate = true;
+                    fetch.size = true;
+                } else if ("FULL".equalsIgnoreCase(name)) {
+                    fetch.flags = true;
+                    fetch.internalDate = true;
+                    fetch.size = true;
+                    fetch.envelope = true;
+                    fetch.body = true;
+                } else if ("ALL".equalsIgnoreCase(name)) {
+                    fetch.flags = true;
+                    fetch.internalDate = true;
+                    fetch.size = true;
+                    fetch.envelope = true;
+                } else if ("FLAGS".equalsIgnoreCase(name)) {
+                    fetch.flags = true;
+                } else if ("RFC822.SIZE".equalsIgnoreCase(name)) {
+                    fetch.size = true;
+                } else if ("ENVELOPE".equalsIgnoreCase(name)) {
+                    fetch.envelope = true;
+                } else if ("INTERNALDATE".equalsIgnoreCase(name)) {
+                    fetch.internalDate = true;
+                } else if ("BODY".equalsIgnoreCase(name)) {
+                    fetch.body = true;
+                } else if ("BODYSTRUCTURE".equalsIgnoreCase(name)) {
+                    fetch.bodyStructure = true;
+                } else if ("UID".equalsIgnoreCase(name)) {
+                    fetch.uid = true;
+                } else if ("RFC822".equalsIgnoreCase(name)) {
+                    fetch.add(new BodyFetchElement("RFC822", ""), false);
+                } else if ("RFC822.HEADER".equalsIgnoreCase(name)) {
+                    fetch.add(new BodyFetchElement("RFC822.HEADER", "HEADER"), true);
+                } else if ("RFC822.TEXT".equalsIgnoreCase(name)) {
+                    fetch.add(new BodyFetchElement("RFC822.TEXT", "TEXT"), false);
+                } else {
+                    throw new ProtocolException("Invalid fetch attribute: " + name);
+                }
+            } else {
+                consumeChar(command, '[');
+
+                StringBuilder sectionIdentifier = new StringBuilder();
+                next = nextCharInLine(command);
+                while (next != ']') {
+                    sectionIdentifier.append(next);
+                    command.consume();
+                    next = nextCharInLine(command);
+                }
+                consumeChar(command, ']');
+
+                String parameter = sectionIdentifier.toString();
+
+                Partial partial = null;
+                next = command.nextChar(); // Can be end of line if single option
+                if ('<' == next) { // Partial eg <2000> or <0.1000>
+                    partial = parsePartial(command);
+                }
+
+                if ("BODY".equalsIgnoreCase(name)) {
+                    fetch.add(new BodyFetchElement("BODY[" + parameter + ']', parameter, partial), false);
+                } else if ("BODY.PEEK".equalsIgnoreCase(name)) {
+                    fetch.add(new BodyFetchElement("BODY[" + parameter + ']', parameter, partial), true);
+                } else {
+                    throw new ProtocolException("Invalid fetch attribute: " + name + "[]");
+                }
+            }
+        }
+
+        private Partial parsePartial(ImapRequestLineReader command) throws ProtocolException {
+            consumeChar(command, '<');
+            int size = (int) consumeLong(command); // Assume <start>
+            int start = 0;
+            if (command.nextChar() == '.') {
+                consumeChar(command, '.');
+                start = size; // Assume <start.size> , so switch fields
+                size = (int) consumeLong(command);
+            }
+            consumeChar(command, '>');
+            return Partial.as(start, size);
+        }
+
+        private char nextCharInLine(ImapRequestLineReader request)
+                throws ProtocolException {
+            char next = request.nextChar();
+            if (isCrOrLf(next)) {
+                request.dumpLine();
+                throw new ProtocolException("Unexpected end of line (CR or LF).");
+            }
+            return next;
+        }
+
+        private char nextNonSpaceChar(ImapRequestLineReader request)
+                throws ProtocolException {
+            char next = request.nextChar();
+            while (next == ' ') {
+                request.consume();
+                next = request.nextChar();
+            }
+            return next;
+        }
+
     }
 
-    public String getParameters() {
-      return this.sectionIdentifier;
+    private static class FetchRequest {
+        boolean flags;
+        boolean uid;
+        boolean internalDate;
+        boolean size;
+        boolean envelope;
+        boolean body;
+        boolean bodyStructure;
+
+        private boolean setSeen = false;
+
+        private Set<BodyFetchElement> bodyElements = new HashSet<>();
+
+        public Collection<BodyFetchElement> getBodyElements() {
+            return bodyElements;
+        }
+
+        public boolean isSetSeen() {
+            return setSeen;
+        }
+
+        public void add(BodyFetchElement element, boolean peek) {
+            if (!peek) {
+                setSeen = true;
+            }
+            bodyElements.add(element);
+        }
     }
 
-    public String getResponseName() {
-      return this.name;
+    /**
+     * See https://tools.ietf.org/html/rfc3501#page-55 : partial
+     */
+    private static class Partial {
+        int start,
+                size;
+
+        int computeLength(final int contentSize) {
+            if (size > 0) {
+                return Math.min(size, contentSize - start); // Only up to max available bytes
+            } else {
+                // First len bytes
+                return contentSize;
+            }
+        }
+
+        int computeStart(final int contentSize) {
+            return Math.min(start, contentSize);
+        }
+
+        public static Partial as(int start, int size) {
+            Partial p = new Partial();
+            p.start = start;
+            p.size = size;
+            return p;
+        }
     }
 
-    public Partial getPartial() {
-      return partial;
+    private static class BodyFetchElement {
+        private String name;
+        private String sectionIdentifier;
+        private Partial partial;
+
+        public BodyFetchElement(String name, String sectionIdentifier) {
+            this(name, sectionIdentifier, null);
+        }
+
+        public BodyFetchElement(String name, String sectionIdentifier, Partial partial) {
+            this.name = name;
+            this.sectionIdentifier = sectionIdentifier;
+            this.partial = partial;
+        }
+
+        public String getParameters() {
+            return this.sectionIdentifier;
+        }
+
+        public String getResponseName() {
+            return this.name;
+        }
+
+        public Partial getPartial() {
+            return partial;
+        }
     }
-  }
 
 }
 
