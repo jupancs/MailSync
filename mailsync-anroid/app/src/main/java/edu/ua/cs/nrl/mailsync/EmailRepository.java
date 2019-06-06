@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
@@ -51,12 +52,14 @@ public  class EmailRepository {
     private boolean lastInternetState = true;
     private Relayer relayer;
     private int lastMailboxSize;
-    private Context context;
+    private static Context context;
     private MutableLiveData<Boolean> networkStatus;
     private static View view;
     private static int storedMessages;
     private static final String TAG = "EmailRepo";
     TextView textView;
+    private static ArrayList<Long>incompleteUids= new ArrayList<>();
+    public static boolean isIncomplete=false;
 
 
 
@@ -70,6 +73,34 @@ public  class EmailRepository {
 
     public EmailRepository(){
 
+    }
+
+    //Adds uids of emails that are not completed
+    synchronized public void addIncompleteUids(long uid){
+        incompleteUids.add(uid);
+        isIncomplete=true;
+    }
+    //Notifies user if an email is not stored completely
+    public void notifyIncompleteEmail(long uid){
+        toast(context,"The email of " + uid + " was not stored correctly. Please try again later");
+    }
+
+    //Returns a boolean that returns true if there are any incomplete emails
+    public static boolean isIsIncomplete() {
+        return isIncomplete;
+    }
+
+    //Returns an array of incomplete email uids
+    public static ArrayList<Long> getIncompleteUids() {
+        return incompleteUids;
+    }
+
+    //Removes uid from the list of uids
+    synchronized public void removeIncompleteUids(long uid){
+        incompleteUids.remove(uid);
+        if(incompleteUids.isEmpty()){
+            isIncomplete=false;
+        }
     }
 
     public boolean isNetworkAvailable() {
@@ -322,6 +353,16 @@ public  class EmailRepository {
         } catch (CouchbaseLiteException e) {
             e.printStackTrace();
         }
+    }
+    //Gives Toast about syncing set amount of messages...to be removed soon
+    public void toast(final Context context, final String text) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            public void run() {
+                Toast.makeText(context, text, Toast.LENGTH_LONG).show();
+
+            }
+        });
     }
 }
 
