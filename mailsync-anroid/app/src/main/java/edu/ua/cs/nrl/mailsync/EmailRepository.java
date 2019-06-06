@@ -60,6 +60,8 @@ public  class EmailRepository {
     TextView textView;
     private static ArrayList<Long>incompleteUids= new ArrayList<>();
     public static boolean isIncomplete=false;
+    //Keeps track of max amount of emails that can be stored when refreshed
+    public static int maxEmailsStored;
     public EmailRepository(Context context, String userEmail, String userPassword) {
         this.context = context;
         this.userEmail = userEmail;
@@ -124,9 +126,9 @@ public  class EmailRepository {
             Log.d(TAG,"View is null inside increment");
         }
         storedMessages++;
-        System.out.println("Email repo stored message " + storedMessages);
+        System.out.println("Email repo stored message " + storedMessages + "/" + maxEmailsStored);
         textView=view.findViewById(R.id.stored_emails);
-        updateText(Integer.toString(storedMessages));
+        updateText(Integer.toString(storedMessages ) + "/" + maxEmailsStored);
     }
 
     //Updates the Textview to the new storedMessages value
