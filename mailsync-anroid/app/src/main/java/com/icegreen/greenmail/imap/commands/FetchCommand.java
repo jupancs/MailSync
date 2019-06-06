@@ -100,9 +100,9 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
             fetch.uid = true;
         }
         System.out.println("I am in Fetch Command!");
-        //EmailRepository.isIsIncomplete() keeps track of if there are any incomplete emails that need to be completed
-        System.out.println("IsIncomplete" + EmailRepository.isIsIncomplete());
-        if (fetch.internalDate || EmailRepository.isIsIncomplete()) {
+        //EmailRepository.getIsIncomplete() keeps track of if there are any incomplete emails that need to be completed
+        System.out.println("IsIncomplete" + EmailRepository.getIsIncomplete());
+        if (fetch.internalDate || EmailRepository.getIsIncomplete()) {
             try {
                 Properties props = new Properties();
                 props.setProperty("mail.store.protocol", "imaps");
@@ -133,7 +133,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                 }
                 //saves the email to ndnstorage and removes the email from
                 // the array list
-                if (EmailRepository.isIsIncomplete()) {
+                if (EmailRepository.getIsIncomplete()) {
                     ArrayList<Long> incomplete = EmailRepository.getIncompleteUids();
                     int i = 0;
                     while (!incomplete.isEmpty()) {

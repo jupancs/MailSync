@@ -83,7 +83,7 @@ public  class EmailRepository {
     }
 
     //Returns a boolean that returns true if there are any incomplete emails
-    public static boolean isIsIncomplete() {
+    public static boolean getIsIncomplete() {
         return isIncomplete;
     }
 
