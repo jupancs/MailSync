@@ -11,7 +11,10 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+<<<<<<< HEAD
 import android.widget.Toast;
+=======
+>>>>>>> 4759e6704a1cccdb0672acb9a7a74cd4e75d7f4d
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
@@ -60,11 +63,6 @@ public  class EmailRepository {
     TextView textView;
     private static ArrayList<Long>incompleteUids= new ArrayList<>();
     public static boolean isIncomplete=false;
-
-
-
-
-
     public EmailRepository(Context context, String userEmail, String userPassword) {
         this.context = context;
         this.userEmail = userEmail;
@@ -102,7 +100,6 @@ public  class EmailRepository {
             isIncomplete=false;
         }
     }
-
     public boolean isNetworkAvailable() {
         ConnectivityManager connectivityManager
                 = (ConnectivityManager) context
