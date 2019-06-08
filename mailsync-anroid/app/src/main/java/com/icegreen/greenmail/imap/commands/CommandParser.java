@@ -393,7 +393,7 @@ public class CommandParser {
         }
         String range = nextWord.substring(pos);
         rangeList.add(IdRange.parseRange(range));
-        EmailRepository.maxEmailsStored=rangeList.size();
+//        EmailRepository.maxEmailsStored=rangeList.size();
         return rangeList.toArray(new IdRange[rangeList.size()]);
     }
 
