@@ -142,7 +142,6 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                         NdnFolder.syncNumber++;
                         saveToNdnStorage(imapFolder, uid);
                         emailRepository.removeIncompleteUids(uid);
-                        i++;
                     }
                 }
                 NdnFolder.messgeID.clear();
@@ -234,6 +233,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
             NdnFolder.messgeID.add(mimeMessage.getMessageID());
             TranslateWorker.start(mimeMessage, ExternalProxy.context);
             System.out.println("Saved Email with UID: " + uid);
+            emailRepository.removeIncompleteUids(uid);
             emailRepository.incrementStoredMessages();
         } catch (MessagingException e) {
             e.printStackTrace();
