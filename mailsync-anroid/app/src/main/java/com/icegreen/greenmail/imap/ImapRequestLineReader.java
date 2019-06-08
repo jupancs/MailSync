@@ -14,6 +14,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.regex.Pattern;
 
+import edu.ua.cs.nrl.mailsync.EmailRepository;
+
 /**
  * Wraps the client input reader with a bunch of convenience methods, allowing lookahead=1
  * on the underlying character stream.
@@ -31,6 +33,7 @@ public class ImapRequestLineReader {
     private char nextChar; // unknown
     private StringBuilder buf = new StringBuilder();
     private static final Pattern CARRIAGE_RETURN = Pattern.compile("\r\n");
+    EmailRepository emailRepository;
 
     ImapRequestLineReader(InputStream input, OutputStream output) {
         this.input = input;
@@ -92,7 +95,50 @@ public class ImapRequestLineReader {
             log.debug("IMAP Line received : <" + CARRIAGE_RETURN.matcher(buf).replaceAll("\\\\r\\\\n")+'>');
         }
         System.out.println("IMAP Line received : <" + CARRIAGE_RETURN.matcher(buf).replaceAll("\\\\r\\\\n")+'>');
+        int pos1=buf.indexOf(" (UID FLAGS)");
+        //Normal Fetch command parsing for testing
+        if(buf.length()>=5&&buf.substring(0,5).equals("FETCH")){
+            System.out.println("0-5 " +buf.substring(0,5) );
+            System.out.println("In a fetch command");
+            if(pos1!=-1){
+                System.out.println("UIDS" + buf.substring(5,pos1));
+            }
+        }
+
+        //IMAP Line received : <FETCH 178,177 (UID FLAGS INTERNALDATE RFC822.SIZE BODY.PEEK[HEADER.FIELDS (from reply-to to cc bcc content-type date message-id X-Android-Message-ID subject in-reply-to references)])\r\n>
+        //The above line is a normal fetch command for new emails which will help us get the uids of the new emails
+        //Gives the pos of the uids in the IMAP fetch command
+        int pos= buf.indexOf(" (UID FLAGS INTERNALDATE RFC822.SIZE BODY.PEEK[HEADER.FIELDS (from reply-to to cc bcc content-type date message-id X-Android-Message-ID subject in-reply-to references)])");
+        if(buf.length()>=5&& pos!=-1){
+            System.out.println("In here " + buf);
+            System.out.println("FInal uids"+buf.substring(5,pos));
+            extractUids(buf.substring(6,pos));
+        }
+
+
         buf.delete(0, buf.length());
+    }
+
+    //Used to extract uids from the list of uids and it added to the InCompleteUIds list
+    //Also helps identify the max amount of emails that can be stored signified by the size of
+    // dig array
+    public void extractUids(String s) {
+        emailRepository=new EmailRepository();
+        char []str = s.toCharArray();
+        int start=0,end=0;
+        String[]dig=s.split(",");
+        System.out.println(dig[0]);
+        int numOfEmails=0;
+        for(String i: dig){
+            numOfEmails++;
+            if(android.text.TextUtils.isDigitsOnly(i)){
+                Long uid = Long.parseLong(i);
+                emailRepository.addIncompleteUids(uid);
+
+            }
+        }
+        EmailRepository.maxEmailsStored=numOfEmails;
+
     }
 
     /**
