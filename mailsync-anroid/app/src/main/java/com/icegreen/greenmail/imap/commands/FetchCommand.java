@@ -101,6 +101,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
         }
         System.out.println("I am in Fetch Command!");
         //EmailRepository.getIsIncomplete() keeps track of if there are any incomplete emails that need to be completed
+        //Only want to fetch when internet is available
         System.out.println("IsIncomplete" + EmailRepository.getIsIncomplete());
         if ((fetch.internalDate || EmailRepository.getIsIncomplete())&& emailRepository.isNetworkAvailable()) {
             try {
