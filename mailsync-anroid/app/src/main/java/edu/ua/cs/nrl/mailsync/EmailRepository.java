@@ -463,14 +463,5 @@ public class EmailRepository {
         });
     }
 
-    public void runServer() {
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            public void run() {
-                runServerButton.performClick();
-                System.out.println("Server Button Clicked");
-            }
-        });
-    }
 }
 
