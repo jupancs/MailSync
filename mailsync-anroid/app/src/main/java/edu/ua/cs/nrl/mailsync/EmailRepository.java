@@ -83,6 +83,7 @@ public class EmailRepository {
         isIncomplete = true;
     }
 
+    //Gets all the uids in the array
     public void getAllUids(){
         System.out.println("Uids in the list are");
             for( long i: incompleteUids){
@@ -113,6 +114,7 @@ public class EmailRepository {
         }
     }
 
+    //Checks if network is available
     public boolean isNetworkAvailable() {
         ConnectivityManager connectivityManager
                 = (ConnectivityManager) context
@@ -158,6 +160,7 @@ public class EmailRepository {
         });
     }
 
+    //returns stored messages
     public int getStoredMessages() {
         return storedMessages;
     }
