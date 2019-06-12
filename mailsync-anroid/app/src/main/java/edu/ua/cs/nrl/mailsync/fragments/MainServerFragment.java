@@ -34,7 +34,7 @@ public class MainServerFragment extends BaseFragment {
     public Message[] messages;
     @BindView(R2.id.icon_letter)
     TextView iconLetter;
-
+    private boolean lastInternetState = true;
     //  @BindView(R2.id.get_ip)
 //  Button getIpButton;
     @BindView(R2.id.email_account)
@@ -94,15 +94,101 @@ public class MainServerFragment extends BaseFragment {
             this.userPassword = userPassword;
         });
         //initializes the view of viewmodel and the progress bar to 0
+        Button button = getActivity().findViewById(R.id.run_server);
         emailViewModel.view= rootView;
-        emailViewModel.init(userEmail, userPassword);
+        emailViewModel.init(userEmail, userPassword,button );
         progressBar= rootView.findViewById(R.id.download_bar);
         progressBar.setProgress(0);
-
+        runServer();
 
 
         return rootView;
     }
+
+    public void runServer(){
+        new Thread(new Runnable() {
+            public void run() {
+                while (true) {
+                    try {
+                        boolean currnetInternetState = EmailViewModel.isNetworkAvailable();
+                        if (lastInternetState != currnetInternetState) {
+//              NfdcHelper nfdcHelper = new NfdcHelper();
+//              boolean routeExists = false;
+//              try {
+//                for (RibEntry ribEntry : nfdcHelper.ribList()) {
+//                  if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
+//                    routeExists = true;
+//                    break;
+//                  }
+//                }
+//                if (!routeExists) {
+//                  FaceStatus faceStatus =
+//                      nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
+//                  int faceId = faceStatus.getFaceId();
+//                  nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
+//                }
+//                nfdcHelper.shutdown();
+//              } catch (ManagementException e) {
+//                e.printStackTrace();
+//              } catch (FaceUri.CanonizeError canonizeError) {
+//                canonizeError.printStackTrace();
+//              } catch (Exception e) {
+//                e.printStackTrace();
+//              }
+
+//              new Thread(new Runnable() {
+//                @Override
+//                public void run() {
+//                  NfdcHelper nfdcHelper = new NfdcHelper();
+//                  boolean routeExists = false;
+//                  try {
+//                    for (RibEntry ribEntry : nfdcHelper.ribList()) {
+//                      if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
+//                        routeExists = true;
+//                        break;
+//                      }
+//                    }
+//                    if (!routeExists) {
+//                      FaceStatus faceStatus =
+//                          nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
+//                      int faceId = faceStatus.getFaceId();
+//                      nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
+//                    }
+//                    nfdcHelper.shutdown();
+//                  } catch (ManagementException e) {
+//                    e.printStackTrace();
+//                  } catch (FaceUri.CanonizeError canonizeError) {
+//                    canonizeError.printStackTrace();
+//                  } catch (Exception e) {
+//                    e.printStackTrace();
+//                  }
+//                }
+//              }).start();
+
+                            stop = !currnetInternetState;
+                            getActivity().runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+//                  synchronized (TranslateWorker.class) {
+//                                    emailViewModel.shutdownRelayer();
+                                    runServerButton.performClick();
+                                    System.out.println("Server Started");
+                                    emailViewModel.getAllUids();
+//                  }
+                                }
+                            });
+                        }
+                        lastInternetState = currnetInternetState;
+                        // Sleep for 1000 milliseconds.
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+
 
 
     @OnClick(R2.id.run_server)

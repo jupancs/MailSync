@@ -119,9 +119,10 @@ public class GreenMail extends ConfiguredGreenMail {
                 if (log.isDebugEnabled()) {
                     log.debug("Stopping service " + service.toString());
                 }
-                service.stopService();
+                service.stopService(1000);
             }
         }
+        System.out.println("Stopped gmail service");
         managers = new Managers();
         services = null;
     }

@@ -9,7 +9,7 @@ import android.os.Looper;
 import android.os.StrictMode;
 import android.util.Log;
 import android.view.View;
-import android.widget.ProgressBar;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,8 +21,6 @@ import com.intel.jndn.management.ManagementException;
 
 import net.named_data.jndn.Name;
 import net.named_data.jndn_xx.util.FaceUri;
-
-import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -39,7 +37,7 @@ import edu.ua.cs.nrl.mailsync.database.NdnDBConnectionFactory;
 import edu.ua.cs.nrl.mailsync.relayer.Relayer;
 import edu.ua.cs.nrl.mailsync.utils.NfdcHelper;
 
-public  class EmailRepository {
+public class EmailRepository {
     private int mailboxSize;
     boolean hasInternetBefore = false;
     private Unbinder unbinder;
@@ -58,28 +56,43 @@ public  class EmailRepository {
     private static int storedMessages;
     private static final String TAG = "EmailRepo";
     TextView textView;
-    private static ArrayList<Long>incompleteUids= new ArrayList<>();
-    public static boolean isIncomplete=false;
+    private static Button runServerButton;
+    public static boolean stop = false;
+    private static ArrayList<Long> incompleteUids = new ArrayList<>();
+    public static boolean isIncomplete = false;
     //Keeps track of max amount of emails that can be stored when refreshed
     public static int maxEmailsStored;
+
     public EmailRepository(Context context, String userEmail, String userPassword) {
         this.context = context;
         this.userEmail = userEmail;
         this.userPassword = userPassword;
     }
 
-    public EmailRepository(){
+    public EmailRepository() {
 
     }
 
     //Adds uids of emails that are not completed
-    synchronized public void addIncompleteUids(long uid){
-        incompleteUids.add(uid);
-        isIncomplete=true;
+    public void addIncompleteUids(long uid) {
+        if(incompleteUids.indexOf(uid)==-1){
+            incompleteUids.add(uid);
+            System.out.println("Uid : " + uid + "Was added");
+        }
+
+        isIncomplete = true;
     }
+
+    public void getAllUids(){
+        System.out.println("Uids in the list are");
+            for( long i: incompleteUids){
+                System.out.print(i + " ");
+            }
+    }
+
     //Notifies user if an email is not stored completely
-    public void notifyIncompleteEmail(long uid){
-        toast(context,"The email of " + uid + " was not stored correctly. Please try again later");
+    public void notifyIncompleteEmail(long uid) {
+        toast(context, "The email of " + uid + " was not stored correctly. Please try again later");
     }
 
     //Returns a boolean that returns true if there are any incomplete emails
@@ -93,12 +106,13 @@ public  class EmailRepository {
     }
 
     //Removes uid from the list of uids
-    synchronized public void removeIncompleteUids(long uid){
+    synchronized public void removeIncompleteUids(long uid) {
         incompleteUids.remove(uid);
-        if(incompleteUids.isEmpty()){
-            isIncomplete=false;
+        if (incompleteUids.isEmpty()) {
+            isIncomplete = false;
         }
     }
+
     public boolean isNetworkAvailable() {
         ConnectivityManager connectivityManager
                 = (ConnectivityManager) context
@@ -112,27 +126,28 @@ public  class EmailRepository {
         initializeDB();
         initializeThreadPolicy();
         initializeExternalProxy();
-        this.view=view;
+//        startNetworkCheckThread();
+        this.view = view;
 
-        if(view==null){
-            Log.d(TAG,"View null");
+        if (view == null) {
+            Log.d(TAG, "View null");
         }
     }
 
     //Increments stored messages number and checks if the view is null if not then
     // the text view showing the stored messages is incremented
-    synchronized public void incrementStoredMessages(){
-        if(view==null){
-            Log.d(TAG,"View is null inside increment");
+    synchronized public void incrementStoredMessages() {
+        if (view == null) {
+            Log.d(TAG, "View is null inside increment");
         }
         storedMessages++;
         System.out.println("Email repo stored message " + storedMessages + "/" + maxEmailsStored);
-        textView=view.findViewById(R.id.stored_emails);
-        updateText(Integer.toString(storedMessages ) + "/" + maxEmailsStored);
+        textView = view.findViewById(R.id.stored_emails);
+        updateText(Integer.toString(storedMessages) + "/" + maxEmailsStored);
     }
 
     //Updates the Textview to the new storedMessages value
-    synchronized public void updateText(String text){
+    synchronized public void updateText(String text) {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             public void run() {
@@ -143,12 +158,12 @@ public  class EmailRepository {
         });
     }
 
-    public   int getStoredMessages() {
+    public int getStoredMessages() {
         return storedMessages;
     }
 
-    public void setStoredMessages(int value){
-        storedMessages=value;
+    public void setStoredMessages(int value) {
+        storedMessages = value;
     }
 
     private void initializeExternalProxy() {
@@ -280,18 +295,26 @@ public  class EmailRepository {
             }
         }).start();
         ExternalProxy.setSelectedProxy(2);
-
+        System.out.println("Network available");
 
         // Start the relayer service
 //        startRelayer();
+        if(isNetworkAvailable()){
+            startRelayer();
+        }
 
         if (!isFirstTime) {
             ExternalProxy.ndnMailSyncOneThread.face_.shutdown();
         }
 
         ExternalProxy.ndnMailSyncOneThread =
-                new NDNMailSyncOneThread(context.getApplicationContext(),view);
+                new NDNMailSyncOneThread(context.getApplicationContext(), view);
     }
+//
+//    public void stopGmail(){
+//        ExternalProxy.stopGmail();
+//        shutdownRelayer();
+//    }
 
     public void shutdownRelayer() {
         if (hasInternetBefore) {
@@ -309,6 +332,83 @@ public  class EmailRepository {
         relayer = new Relayer(3143);
         relayer.execute(new String[]{""});
     }
+//
+//    public void startNetworkCheckThread() {
+//        new Thread(new Runnable() {
+//            public void run() {
+//                while (true) {
+//                    try {
+//                        boolean currnetInternetState = isNetworkAvailable();
+//                        if (lastInternetState != currnetInternetState) {
+//                            System.out.println("Network Config Changed");
+////              NfdcHelper nfdcHelper = new NfdcHelper();
+////              boolean routeExists = false;
+////              try {
+////                for (RibEntry ribEntry : nfdcHelper.ribList()) {
+////                  if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
+////                    routeExists = true;
+////                    break;
+////                  }
+////                }
+////                if (!routeExists) {
+////                  FaceStatus faceStatus =
+////                      nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
+////                  int faceId = faceStatus.getFaceId();
+////                  nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
+////                }
+////                nfdcHelper.shutdown();
+////              } catch (ManagementException e) {
+////                e.printStackTrace();
+////              } catch (FaceUri.CanonizeError canonizeError) {
+////                canonizeError.printStackTrace();
+////              } catch (Exception e) {
+////                e.printStackTrace();
+////              }
+//
+////              new Thread(new Runnable() {
+////                @Override
+////                public void run() {
+////                  NfdcHelper nfdcHelper = new NfdcHelper();
+////                  boolean routeExists = false;
+////                  try {
+////                    for (RibEntry ribEntry : nfdcHelper.ribList()) {
+////                      if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
+////                        routeExists = true;
+////                        break;
+////                      }
+////                    }
+////                    if (!routeExists) {
+////                      FaceStatus faceStatus =
+////                          nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
+////                      int faceId = faceStatus.getFaceId();
+////                      nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
+////                    }
+////                    nfdcHelper.shutdown();
+////                  } catch (ManagementException e) {
+////                    e.printStackTrace();
+////                  } catch (FaceUri.CanonizeError canonizeError) {
+////                    canonizeError.printStackTrace();
+////                  } catch (Exception e) {
+////                    e.printStackTrace();
+////                  }
+////                }
+////              }).start();
+//
+//                            stop = !currnetInternetState;
+//                            runServer();
+//                        }
+//                        lastInternetState = currnetInternetState;
+//                        // Sleep for 1000 milliseconds.
+//                        Thread.sleep(1000);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }
+//        }).start();
+//    }
+
+
 
     public void ndnMailExecution() {
         scheduleTaskExecutor = Executors.newScheduledThreadPool(5);
@@ -329,8 +429,9 @@ public  class EmailRepository {
         ExternalProxy.setSelectedProxy(2);
         if (isNetworkAvailable()) {
             System.out.println("Network available");
-            startRelayer();
+
             startGmail(view);
+
 
         } else {
             shutdownRelayer();
@@ -350,6 +451,7 @@ public  class EmailRepository {
             e.printStackTrace();
         }
     }
+
     //Gives Toast about syncing set amount of messages...to be removed soon
     public void toast(final Context context, final String text) {
         Handler handler = new Handler(Looper.getMainLooper());
@@ -357,6 +459,16 @@ public  class EmailRepository {
             public void run() {
                 Toast.makeText(context, text, Toast.LENGTH_LONG).show();
 
+            }
+        });
+    }
+
+    public void runServer() {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            public void run() {
+                runServerButton.performClick();
+                System.out.println("Server Button Clicked");
             }
         });
     }

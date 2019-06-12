@@ -122,7 +122,8 @@ public class ImapRequestLineReader {
     //Used to extract uids from the list of uids and it added to the InCompleteUIds list
     //Also helps identify the max amount of emails that can be stored signified by the size of
     // dig array
-    public void extractUids(String s) {
+    public void extractUids(String a) {
+        String s = new String (a);
         emailRepository=new EmailRepository();
         char []str = s.toCharArray();
         int start=0,end=0;
@@ -134,7 +135,7 @@ public class ImapRequestLineReader {
             if(android.text.TextUtils.isDigitsOnly(i)){
                 Long uid = Long.parseLong(i);
                 emailRepository.addIncompleteUids(uid);
-
+                System.out.println("This uid is incomplete :" + uid);
             }
         }
         EmailRepository.maxEmailsStored=numOfEmails;
