@@ -105,6 +105,7 @@ public class MainServerFragment extends BaseFragment {
         return rootView;
     }
 
+    //Starts a thread that switches from ndnmode to normal mode depending on if network is available
     public void runServer(){
         new Thread(new Runnable() {
             public void run() {
