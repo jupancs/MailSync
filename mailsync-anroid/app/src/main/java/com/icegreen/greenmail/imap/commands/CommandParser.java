@@ -20,6 +20,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import edu.ua.cs.nrl.mailsync.EmailRepository;
+
 /**
  * @author Darrell DeBoer <darrell@apache.org>
  * @version $Revision: 109034 $
@@ -391,6 +393,7 @@ public class CommandParser {
         }
         String range = nextWord.substring(pos);
         rangeList.add(IdRange.parseRange(range));
+//        EmailRepository.maxEmailsStored=rangeList.size();
         return rangeList.toArray(new IdRange[rangeList.size()]);
     }
 

@@ -1,6 +1,7 @@
 package com.icegreen.greenmail.ndnproxy;
 
 import android.content.Context;
+import android.view.View;
 
 import net.named_data.jndn.Face;
 import net.named_data.jndn.Name;
@@ -24,7 +25,7 @@ public class NDNMailSyncOneThread {
   public NDNMailSyncConsumerProducer cp;
   public static Boolean result = false;
 
-  public NDNMailSyncOneThread(Context context) {
+  public NDNMailSyncOneThread(Context context, View view) {
     try {
       face_ = new Face();
       identityStorage_ = new MemoryIdentityStorage();
@@ -51,7 +52,7 @@ public class NDNMailSyncOneThread {
       System.out.println("security exception");
     }
 
-    cp = new NDNMailSyncConsumerProducer(keyChain_, certificateName_, context);
+    cp = new NDNMailSyncConsumerProducer(keyChain_, certificateName_, context, view);
 
     Name prefix = new Name("/mailSync");
     System.out.println("Register prefix  " + prefix.toUri());

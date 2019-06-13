@@ -46,6 +46,8 @@ public class ExternalProxy {
     return -1;
   }
 
+
+
   public static void setSelectedProxy(int i) {
     proxySelection = i;
   }

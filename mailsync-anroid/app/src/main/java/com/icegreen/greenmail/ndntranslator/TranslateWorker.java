@@ -1,27 +1,16 @@
 package com.icegreen.greenmail.ndntranslator;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.DataSource;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.DatabaseConfiguration;
-import com.couchbase.lite.Query;
-import com.couchbase.lite.QueryBuilder;
-import com.couchbase.lite.ResultSet;
-import com.couchbase.lite.SelectResult;
 import com.google.common.io.BaseEncoding;
 import com.icegreen.greenmail.ExternalProxy;
-import com.icegreen.greenmail.Managers;
-import com.icegreen.greenmail.imap.ImapHostManager;
 import com.icegreen.greenmail.ndnproxy.NdnFolder;
-import com.icegreen.greenmail.ndnproxy.Snapshot;
 import com.icegreen.greenmail.store.FolderException;
-import com.icegreen.greenmail.store.MailFolder;
-import com.icegreen.greenmail.store.MessageFlags;
 import com.icegreen.greenmail.store.SimpleMessageAttributes;
-import com.icegreen.greenmail.store.StoredMessage;
-import com.icegreen.greenmail.user.UserManager;
 
 import net.named_data.jndn.Data;
 import net.named_data.jndn.Name;
@@ -36,55 +25,57 @@ import java.io.ObjectOutputStream;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
+import edu.ua.cs.nrl.mailsync.EmailRepository;
 import edu.ua.cs.nrl.mailsync.database.NdnDBConnection;
 import edu.ua.cs.nrl.mailsync.database.NdnDBConnectionFactory;
-import edu.ua.cs.nrl.mailsync.fragments.MainServerFragment;
 
 public class TranslateWorker {
 
-  public static String probeSize;
+    public static String probeSize;
+    public final static String TAG = "TranslateWorker";
 
-  public static void start(MimeMessage mimeMessage, Context context) throws
-      FolderException, IOException, CouchbaseLiteException, MessagingException {
-    // Initialize IMAP-to-NDN translators
-    NdnTranslator ndnTranslator = TranslatorFactory.getNdnTranslator("IMAP", context);
+    public static void start(MimeMessage mimeMessage, Context context, long uid) throws
+            FolderException, IOException, CouchbaseLiteException, MessagingException {
+        // Initialize IMAP-to-NDN translators
+        NdnTranslator ndnTranslator = TranslatorFactory.getNdnTranslator("IMAP", context);
 
-    DatabaseConfiguration config = new DatabaseConfiguration(context);
-    Database database = new Database("Probe", config);
+        DatabaseConfiguration config = new DatabaseConfiguration(context);
+        Database database = new Database("Probe", config);
 
-    NdnDBConnection ndnDBConnection = NdnDBConnectionFactory.getDBConnection(
-        "couchbaseLite",
-        context
-    );
+        NdnDBConnection ndnDBConnection = NdnDBConnectionFactory.getDBConnection(
+                "couchbaseLite",
+                context
+        );
 
-    KeyChain keyChain = ExternalProxy.ndnMailSyncOneThread.keyChain_;
-    Name certificateName = ExternalProxy.ndnMailSyncOneThread.certificateName_;
+        KeyChain keyChain = ExternalProxy.ndnMailSyncOneThread.keyChain_;
+        Name certificateName = ExternalProxy.ndnMailSyncOneThread.certificateName_;
 
 
-    /**
-     * Deal with attributes
-     *
-     */
-    String attributeName = ndnTranslator.generateAttributeName(
-        "mailSync",
-        ExternalProxy.userEmail,
-        "inbox",
-        "1",
-        String.valueOf(mimeMessage.getMessageID())
-    );
-    Name attributeNdnName = new Name(attributeName);
-    attributeName = attributeNdnName.toUri();
+        /**
+         * Deal with attributes
+         *
+         */
+        String attributeName = ndnTranslator.generateAttributeName(
+                "mailSync",
+                ExternalProxy.userEmail,
+                "inbox",
+                "1",
+                String.valueOf(mimeMessage.getMessageID())
+        );
+        Name attributeNdnName = new Name(attributeName);
+        attributeName = attributeNdnName.toUri();
 
-    byte[] attributeData = ndnTranslator.encodeAttribute(
-        new SimpleMessageAttributes(mimeMessage, mimeMessage.getReceivedDate()), attributeNdnName
-    );
+        byte[] attributeData = ndnTranslator.encodeAttribute(
+                new SimpleMessageAttributes(mimeMessage, mimeMessage.getReceivedDate()), attributeNdnName
+        );
 
-    ndnTranslator.saveData(attributeName, attributeData, "Attribute");
+        ndnTranslator.saveData(attributeName, attributeData, "Attribute");
+        Log.d(TAG,"Attribute Saved " + attributeName);
 
-    /**
-     * Deal with MailFolder
-     *
-     */
+        /**
+         * Deal with MailFolder
+         *
+         */
 //    StringBuilder nameBuilder1 = new StringBuilder();
 //    nameBuilder1.append("/").append("mailSync").append("/").append(ExternalProxy.userEmail).append("/")
 //        .append("v1").append("/inbox").append("/").append("1").append("/MimeMessage")
@@ -103,21 +94,21 @@ public class TranslateWorker {
 //    String newMailFolderName1 = mailNdnName1.toUri();
 //    String newMailFolderName2 = mailNdnName2.toUri();
 
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    ObjectOutputStream oos = new ObjectOutputStream(baos);
-    byte[] byteArray;
-    System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^");
-    System.out.println(" Ding Ding");
-    oos.writeObject(NdnFolder.getSnapshot());
-    System.out.println(" Da Da");
-    System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^");
-    oos.flush();
-    byteArray = baos.toByteArray();
-    String contentString = BaseEncoding.base64().encode(byteArray);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        byte[] byteArray;
+        System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^");
+        System.out.println(" Ding Ding");
+        oos.writeObject(NdnFolder.getSnapshot());
+        System.out.println(" Da Da");
+        System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^");
+        oos.flush();
+        byteArray = baos.toByteArray();
+        String contentString = BaseEncoding.base64().encode(byteArray);
 
 //    Name mailFolderNdnName1 = new Name("/mailSync/"+ ExternalProxy.userEmail + "/inbox/1/MailFolder/1/v1");
 //    Name mailFolderNdnName2 = new Name("/mailSync/"+ ExternalProxy.userEmail + "/inbox/1/MailFolder/1/v2");
-    int mailFolderLen = contentString.length();
+        int mailFolderLen = contentString.length();
 
 //    String part1 = contentString.substring(0, len / 2);
 //    String part2 = contentString.substring(len / 2);
@@ -149,104 +140,112 @@ public class TranslateWorker {
 //    ndnTranslator.saveData(newMailFolderName1, result1, "MailFolder");
 //    ndnTranslator.saveData(newMailFolderName2, result2, "MailFolder");
 
-    /**
-     * Deal with probe
-     *
-     */
-    int mailFolderChunkSize = mailFolderLen / 7000 + 1;
-    int mailFolderChunkLen = (int) Math.ceil(contentString.length() / (double) mailFolderChunkSize);
-    probeSize = String.valueOf(mailFolderChunkSize);
+        /**
+         * Deal with probe
+         *
+         */
+        int mailFolderChunkSize = mailFolderLen / 7000 + 1;
+        int mailFolderChunkLen = (int) Math.ceil(contentString.length() / (double) mailFolderChunkSize);
+        probeSize = String.valueOf(mailFolderChunkSize);
 
-    /**
-     * Deal with MailFolder
-     *
-     */
-    StringBuilder nameBuilder = new StringBuilder();
-    nameBuilder.append("/").append("mailSync").append("/").append(ExternalProxy.userEmail).append("/")
-        .append("v1").append("/inbox").append("/").append("1").append("/MimeMessage")
-        .append("/").append(String.valueOf(mimeMessage.getMessageID()));
+        /**
+         * Deal with MailFolder
+         *
+         */
+        StringBuilder nameBuilder = new StringBuilder();
+        nameBuilder.append("/").append("mailSync").append("/").append(ExternalProxy.userEmail).append("/")
+                .append("v1").append("/inbox").append("/").append("1").append("/MimeMessage")
+                .append("/").append(String.valueOf(mimeMessage.getMessageID()));
 
 
-    String[] mailFolderChunks = new String[mailFolderLen / 7000 + 1];
-    for (int i = 0; i < mailFolderLen / 7000 + 1; i++) {
-      String mailFolderName = "/mailSync/" + ExternalProxy.userEmail + "/v" + i + "/inbox/1/MailFolder/"
-          + String.valueOf(mimeMessage.getMessageID());
-      Name mailFolderNdnName = new Name(mailFolderName);
-      mailFolderName = mailFolderNdnName.toUri();
-      if (i == mailFolderChunkSize - 1) {
-        mailFolderChunks[i] = contentString.substring(i * mailFolderChunkLen, contentString.length());
-      } else {
-        mailFolderChunks[i] = contentString.substring(i * mailFolderChunkLen, (i + 1) * mailFolderChunkLen);
-      }
-      mailFolderNdnName = new Name("/mailSync/" + ExternalProxy.userEmail + "/inbox/1/MailFolder/1/v" + i);
-      Data data = new Data(mailFolderNdnName);
-      data.setContent(new Blob(mailFolderChunks[i]));
+        String[] mailFolderChunks = new String[mailFolderLen / 7000 + 1];
+        for (int i = 0; i < mailFolderLen / 7000 + 1; i++) {
+            String mailFolderName = "/mailSync/" + ExternalProxy.userEmail + "/v" + i + "/inbox/1/MailFolder/"
+                    + String.valueOf(mimeMessage.getMessageID());
+            Name mailFolderNdnName = new Name(mailFolderName);
+            mailFolderName = mailFolderNdnName.toUri();
+            if (i == mailFolderChunkSize - 1) {
+                mailFolderChunks[i] = contentString.substring(i * mailFolderChunkLen, contentString.length());
+            } else {
+                mailFolderChunks[i] = contentString.substring(i * mailFolderChunkLen, (i + 1) * mailFolderChunkLen);
+            }
+            mailFolderNdnName = new Name("/mailSync/" + ExternalProxy.userEmail + "/inbox/1/MailFolder/1/v" + i);
+            Data data = new Data(mailFolderNdnName);
+            data.setContent(new Blob(mailFolderChunks[i]));
 
-      try {
-        keyChain.sign(data, certificateName);
-      } catch (SecurityException e) {
-        e.printStackTrace();
-      }
+            try {
+                keyChain.sign(data, certificateName);
+            } catch (SecurityException e) {
+                e.printStackTrace();
+            }
 
-      // Get SingedBuffer
-      Blob encoding = data.wireEncode();
-      byte[] result = encoding.getImmutableArray();
+            // Get SingedBuffer
+            Blob encoding = data.wireEncode();
+            byte[] result = encoding.getImmutableArray();
 
-      ndnTranslator.saveData(mailFolderName, result, "MailFolder");
+            ndnTranslator.saveData(mailFolderName, result, "MailFolder");
+            Log.d(TAG, "MailFolder Saved " + mailFolderName);
+        }
+
+        /**
+         * Deal with MimeMessage
+         *
+         */
+        String mimeMessageName = ndnTranslator.generateMimeMessageName(
+                "mailSync",
+                ExternalProxy.userEmail,
+                "inbox",
+                "1",
+                String.valueOf(mimeMessage.getMessageID())
+        );
+
+        Name mimeMessageNdnName = new Name(mimeMessageName);
+        mimeMessageName = mimeMessageNdnName.toUri();
+
+        ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
+        ObjectOutputStream oos2 = new ObjectOutputStream(baos);
+        byte[] byteArray2;
+
+        mimeMessage.writeTo(baos2);
+
+        oos2.flush();
+        byteArray2 = baos2.toByteArray();
+        contentString = BaseEncoding.base64().encode(byteArray2);
+
+        // NDN packet upper bound is 8000
+        int messageSize = mimeMessage.getSize();
+        int numberOfChunks = messageSize / 4000 + 1;
+        int chunkLength = (int) Math.ceil(contentString.length() / (double) numberOfChunks);
+        String[] chunks = new String[numberOfChunks];
+        for (int i = 0; i < numberOfChunks; i++) {
+            if (i == numberOfChunks - 1) {
+                chunks[i] = contentString.substring(i * chunkLength, contentString.length());
+            } else {
+                chunks[i] = contentString.substring(i * chunkLength, (i + 1) * chunkLength);
+            }
+
+            Name name = new Name(mimeMessageName + "/v" + i);
+            Data data = new Data(name);
+            data.setContent(new Blob(chunks[i]));
+
+            try {
+                keyChain.sign(data, certificateName);
+            } catch (SecurityException e) {
+                e.printStackTrace();
+            }
+
+            // Get SingedBuffer
+            Blob encoding = data.wireEncode();
+            byte[] result = encoding.getImmutableArray();
+
+            ndnTranslator.saveData(mimeMessageName + "/v" + i, result, "MimeMessage");
+            Log.d(TAG, "Mimemessage Saved " + mimeMessageName);
+
+        }
+        EmailRepository emailRepository = new EmailRepository();
+        emailRepository.removeIncompleteUids(uid);
+        emailRepository.incrementStoredMessages();
+        System.out.println("Saved Email with UID: " + uid);
+        emailRepository.getAllUids();
     }
-
-    /**
-     * Deal with MimeMessage
-     *
-     */
-    String mimeMessageName = ndnTranslator.generateMimeMessageName(
-        "mailSync",
-        ExternalProxy.userEmail,
-        "inbox",
-        "1",
-        String.valueOf(mimeMessage.getMessageID())
-    );
-
-    Name mimeMessageNdnName = new Name(mimeMessageName);
-    mimeMessageName = mimeMessageNdnName.toUri();
-
-    ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
-    ObjectOutputStream oos2 = new ObjectOutputStream(baos);
-    byte[] byteArray2;
-
-    mimeMessage.writeTo(baos2);
-
-    oos2.flush();
-    byteArray2 = baos2.toByteArray();
-    contentString = BaseEncoding.base64().encode(byteArray2);
-
-    // NDN packet upper bound is 8000
-    int messageSize = mimeMessage.getSize();
-    int numberOfChunks = messageSize / 4000 + 1;
-    int chunkLength = (int) Math.ceil(contentString.length() / (double) numberOfChunks);
-    String[] chunks = new String[numberOfChunks];
-    for (int i = 0; i < numberOfChunks; i++) {
-      if (i == numberOfChunks - 1) {
-        chunks[i] = contentString.substring(i * chunkLength, contentString.length());
-      } else {
-        chunks[i] = contentString.substring(i * chunkLength, (i + 1) * chunkLength);
-      }
-
-      Name name = new Name(mimeMessageName + "/v" + i);
-      Data data = new Data(name);
-      data.setContent(new Blob(chunks[i]));
-
-      try {
-        keyChain.sign(data, certificateName);
-      } catch (SecurityException e) {
-        e.printStackTrace();
-      }
-
-      // Get SingedBuffer
-      Blob encoding = data.wireEncode();
-      byte[] result = encoding.getImmutableArray();
-
-      ndnTranslator.saveData(mimeMessageName + "/v" + i, result, "MimeMessage");
-    }
-  }
 }

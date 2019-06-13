@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,7 +34,7 @@ public class MainServerFragment extends BaseFragment {
     public Message[] messages;
     @BindView(R2.id.icon_letter)
     TextView iconLetter;
-
+    private boolean lastInternetState = true;
     //  @BindView(R2.id.get_ip)
 //  Button getIpButton;
     @BindView(R2.id.email_account)
@@ -50,6 +51,7 @@ public class MainServerFragment extends BaseFragment {
     private String userEmail;
     private String userPassword;
     private EmailViewModel emailViewModel;
+    ProgressBar progressBar;
 
     private String TAG = "MainServerFragment";
 
@@ -67,7 +69,7 @@ public class MainServerFragment extends BaseFragment {
         ColorDrawable colorDrawable = new ColorDrawable(Color.parseColor("#ffffff"));
         actionBar.setBackgroundDrawable(colorDrawable);
         actionBar.setTitle(Html.fromHtml("<font color='#009a68'>MailSync</font>"));
-        emailViewModel.init(userEmail, userPassword);
+
 
     }
 
@@ -88,19 +90,112 @@ public class MainServerFragment extends BaseFragment {
             this.userEmail = userEmail;
             Log.v(TAG, userEmail);
         });
-
         emailViewModel.getPassword().observe(this, userPassword -> {
             this.userPassword = userPassword;
         });
+        //initializes the view of viewmodel and the progress bar to 0
+        Button button = getActivity().findViewById(R.id.run_server);
+        emailViewModel.view= rootView;
+        emailViewModel.init(userEmail, userPassword,button );
+        progressBar= rootView.findViewById(R.id.download_bar);
+        progressBar.setProgress(0);
+        runServer();
 
 
         return rootView;
     }
 
+    //Starts a thread that switches from ndnmode to normal mode depending on if network is available
+    public void runServer(){
+        new Thread(new Runnable() {
+            public void run() {
+                while (true) {
+                    try {
+                        boolean currnetInternetState = EmailViewModel.isNetworkAvailable();
+                        if (lastInternetState != currnetInternetState) {
+//              NfdcHelper nfdcHelper = new NfdcHelper();
+//              boolean routeExists = false;
+//              try {
+//                for (RibEntry ribEntry : nfdcHelper.ribList()) {
+//                  if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
+//                    routeExists = true;
+//                    break;
+//                  }
+//                }
+//                if (!routeExists) {
+//                  FaceStatus faceStatus =
+//                      nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
+//                  int faceId = faceStatus.getFaceId();
+//                  nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
+//                }
+//                nfdcHelper.shutdown();
+//              } catch (ManagementException e) {
+//                e.printStackTrace();
+//              } catch (FaceUri.CanonizeError canonizeError) {
+//                canonizeError.printStackTrace();
+//              } catch (Exception e) {
+//                e.printStackTrace();
+//              }
+
+//              new Thread(new Runnable() {
+//                @Override
+//                public void run() {
+//                  NfdcHelper nfdcHelper = new NfdcHelper();
+//                  boolean routeExists = false;
+//                  try {
+//                    for (RibEntry ribEntry : nfdcHelper.ribList()) {
+//                      if (ribEntry.getName().toString().equals("udp4://224.0.23.170:56363")) {
+//                        routeExists = true;
+//                        break;
+//                      }
+//                    }
+//                    if (!routeExists) {
+//                      FaceStatus faceStatus =
+//                          nfdcHelper.faceListAsFaceUriMap(getContext()).get("udp4://224.0.23.170:56363");
+//                      int faceId = faceStatus.getFaceId();
+//                      nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
+//                    }
+//                    nfdcHelper.shutdown();
+//                  } catch (ManagementException e) {
+//                    e.printStackTrace();
+//                  } catch (FaceUri.CanonizeError canonizeError) {
+//                    canonizeError.printStackTrace();
+//                  } catch (Exception e) {
+//                    e.printStackTrace();
+//                  }
+//                }
+//              }).start();
+
+                            stop = !currnetInternetState;
+                            getActivity().runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+//                  synchronized (TranslateWorker.class) {
+//                                    emailViewModel.shutdownRelayer();
+                                    runServerButton.performClick();
+                                    System.out.println("Server Started");
+                                    emailViewModel.getAllUids();
+//                  }
+                                }
+                            });
+                        }
+                        lastInternetState = currnetInternetState;
+                        // Sleep for 1000 milliseconds.
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+
+
 
     @OnClick(R2.id.run_server)
     public void setRunServerButton() {
         Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
+        Log.d(TAG,"Are you working"  + userEmail+userPassword);
         emailViewModel.startServer(userEmail, userPassword);
         Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
         serverStatus.setText("Running ...");

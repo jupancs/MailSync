@@ -7,6 +7,8 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.annotation.NonNull;
+import android.view.View;
+import android.widget.Button;
 
 
 public class EmailViewModel extends AndroidViewModel {
@@ -14,6 +16,7 @@ public class EmailViewModel extends AndroidViewModel {
     private MutableLiveData<String> password;
     private static EmailRepository emailRepository;
     private boolean networkStatus;
+    public View view;
 
 
     public EmailViewModel(@NonNull Application application) {
@@ -24,6 +27,10 @@ public class EmailViewModel extends AndroidViewModel {
     public static void clearDatabase() {
         emailRepository.clearDatabase();
 
+    }
+
+    public static boolean isNetworkAvailable(){
+        return emailRepository.isNetworkAvailable();
     }
 
     public MutableLiveData<String> getPassword() {
@@ -40,15 +47,24 @@ public class EmailViewModel extends AndroidViewModel {
         return email;
     }
 
+    //Starts server in emailRepo and passes view so that it can be updated
     public void startServer(String userEmail, String userPassword) {
-        emailRepository.startServer(userEmail, userPassword);
+        emailRepository.startServer(userEmail, userPassword, view);
     }
 
-    public void init(String userEmail, String userPassword) {
+//    public void shutdownRelayer(){
+//        emailRepository.stopGmail();
+//    }
+
+    //init initializes the view in EmailRepo
+    public void init(String userEmail, String userPassword, Button button) {
         emailRepository = new EmailRepository(getApplication().getApplicationContext(), userEmail, userPassword);
-        emailRepository.init();
+        emailRepository.init(view);
 
 
+    }
+    public void getAllUids(){
+        emailRepository.getAllUids();
     }
 
 
