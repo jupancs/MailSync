@@ -90,30 +90,22 @@ public class ImapRequestLineReader {
     }
 
     public void dumpLine() {
+        emailRepository=new EmailRepository();
         if(log.isDebugEnabled()) {
             // Replace carriage return to avoid confusing multiline log output
             log.debug("IMAP Line received : <" + CARRIAGE_RETURN.matcher(buf).replaceAll("\\\\r\\\\n")+'>');
         }
         System.out.println("IMAP Line received : <" + CARRIAGE_RETURN.matcher(buf).replaceAll("\\\\r\\\\n")+'>');
-        int pos1=buf.indexOf(" (UID FLAGS)");
-        //Normal Fetch command parsing for testing
-        if(buf.length()>=5&&buf.substring(0,5).equals("FETCH")){
-            System.out.println("0-5 " +buf.substring(0,5) );
-            System.out.println("In a fetch command");
-            if(pos1!=-1){
-                System.out.println("UIDS" + buf.substring(5,pos1));
-            }
-        }
-
         //IMAP Line received : <FETCH 178,177 (UID FLAGS INTERNALDATE RFC822.SIZE BODY.PEEK[HEADER.FIELDS (from reply-to to cc bcc content-type date message-id X-Android-Message-ID subject in-reply-to references)])\r\n>
         //The above line is a normal fetch command for new emails which will help us get the uids of the new emails
         //Gives the pos of the uids in the IMAP fetch command
         int pos= buf.indexOf(" (UID FLAGS INTERNALDATE RFC822.SIZE BODY.PEEK[HEADER.FIELDS (from reply-to to cc bcc content-type date message-id X-Android-Message-ID subject in-reply-to references)])");
-        if(buf.length()>=5&& pos!=-1){
-            System.out.println("In here " + buf);
-            System.out.println("FInal uids"+buf.substring(5,pos));
+        if(pos!=-1){
+            System.out.println("New uids"+buf.substring(5,pos));
             extractUids(buf.substring(6,pos));
         }
+        System.out.println("Check 1 Before:");
+        emailRepository.getAllUids();
 
 
         buf.delete(0, buf.length());
@@ -124,21 +116,21 @@ public class ImapRequestLineReader {
     // dig array
     public void extractUids(String a) {
         String s = new String (a);
-        emailRepository=new EmailRepository();
-        char []str = s.toCharArray();
-        int start=0,end=0;
+
         String[]dig=s.split(",");
-        System.out.println(dig[0]);
+        System.out.println("This is the string to extract uid from " + a);
         int numOfEmails=0;
         for(String i: dig){
             numOfEmails++;
             if(android.text.TextUtils.isDigitsOnly(i)){
                 Long uid = Long.parseLong(i);
                 emailRepository.addIncompleteUids(uid);
-                System.out.println("This uid is incomplete :" + uid);
+                System.out.println("This uid is added :" + uid);
             }
         }
-        EmailRepository.maxEmailsStored=numOfEmails;
+        System.out.println("Check 2 After:");
+        emailRepository.getAllUids();
+        EmailRepository.maxEmailsStored +=numOfEmails;
 
     }
 
