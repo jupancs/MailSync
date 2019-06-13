@@ -102,8 +102,8 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
         System.out.println("I am in Fetch Command!");
         //EmailRepository.getIsIncomplete() keeps track of if there are any incomplete emails that need to be completed
         //Only want to fetch when internet is available
-        System.out.println("IsIncomplete" + EmailRepository.getIsIncomplete());
-        if ((fetch.internalDate || EmailRepository.getIsIncomplete())&& emailRepository.isNetworkAvailable()) {
+        System.out.println("Check 3 IsIncomplete: " + EmailRepository.getIsIncomplete());
+        if (fetch.internalDate || (EmailRepository.getIsIncomplete()&& emailRepository.isNetworkAvailable())) {
             try {
                 Properties props = new Properties();
                 props.setProperty("mail.store.protocol", "imaps");
@@ -114,7 +114,6 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                 Folder emailFolder = store.getFolder("INBOX");
                 emailFolder.open(Folder.READ_WRITE);
                 IMAPFolder imapFolder = (IMAPFolder) emailFolder;
-                System.out.println("In here 7!!!!");
                 NdnFolder.folder = imapFolder;
 
                 //If isIncomplete is true then fetch the uid of the email that needs to be completed and complete it
@@ -125,7 +124,8 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                     for (IdRange idRange : idSet) {
                         long uid = idRange.getLowVal();
                         System.out.println("Uid of range " + uid);
-                        System.out.println(">>>> Fetching UID: " + uid);
+                        System.out.println(">>>> Fetching UID(1): " + uid);
+                        Thread.sleep(3000);
                         NdnFolder.syncNumber++;
                         saveToNdnStorage(imapFolder, uid);
                     }
@@ -134,15 +134,48 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                 }
                 //saves the email to ndnstorage and removes the email from
                 // the array list
-                if (EmailRepository.getIsIncomplete()) {
+                if (EmailRepository.getIsIncomplete() && emailRepository.isNetworkAvailable() ) {
                     ArrayList<Long> incomplete = EmailRepository.getIncompleteUids();
-                    int i = 0;
-                    while (!incomplete.isEmpty()) {
-                        long uid = incomplete.get(i);
-                        System.out.println(">>>> Fetching UID: " + uid);
-//                        NdnFolder.syncNumber++;
-                        saveToNdnStorage(imapFolder, uid);
-                        emailRepository.removeIncompleteUids(uid);
+//                    while (!incomplete.isEmpty() && emailRepository.isNetworkAvailable()) {
+//                        long uid = incomplete.get(i);
+//                        System.out.println(">>>> Fetching UID: " + uid);
+////                        NdnFolder.syncNumber++;
+//                        saveToNdnStorage(imapFolder, uid);
+//                    }
+                    int size = incomplete.size();
+//                    for(int i=0;i<size;i++){
+//                        if(emailRepository.isNetworkAvailable()){
+//                            if(!incomplete.isEmpty()){
+//                                if(i< incomplete.size()){
+//                                    long uid = incomplete.get(i);
+//                                    System.out.println(">>>> Fetching UID(2): " + uid);
+//                                    saveToNdnStorage(imapFolder, uid);
+//                                } else {
+//                                    i = 0;
+//                                }
+//                            } else {
+//                                break;
+//                            }
+//
+//
+//                        }
+//                    }
+                    while (!incomplete.isEmpty() && emailRepository.isNetworkAvailable() ){
+                        if(size==0){
+                            //Wait for updation of arraylist
+                            size = incomplete.size();
+
+                        }
+                        if(size>=1){
+                            long uid = incomplete.get(size-1);
+                            System.out.println(">>>> Fetching UID(2): " + uid);
+                            if(emailRepository.isNetworkAvailable()){
+                                saveToNdnStorage(imapFolder, uid);
+                                size--;
+                            }
+                        }
+
+
                     }
                 }
                 NdnFolder.messgeID.clear();
@@ -228,32 +261,31 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
     // while saving it can detect if there is a duplicate
     private void saveToNdnStorage(IMAPFolder folder, long uid) {
         try {
-            Message message = folder.getMessage(getMsn(uid, folder));
-            MimeMessage mimeMessage = (MimeMessage) message;
-            mimeMessage = new MimeMessage(mimeMessage);
-            NdnFolder.messgeID.add(mimeMessage.getMessageID());
-            TranslateWorker.start(mimeMessage, ExternalProxy.context);
-            System.out.println("Saved Email with UID: " + uid);
-            emailRepository.removeIncompleteUids(uid);
-            emailRepository.incrementStoredMessages();
+            if(emailRepository.isNetworkAvailable()){
+                Message message = folder.getMessage(getMsn(uid, folder));
+                MimeMessage mimeMessage = (MimeMessage) message;
+                mimeMessage = new MimeMessage(mimeMessage);
+                NdnFolder.messgeID.add(mimeMessage.getMessageID());
+                TranslateWorker.start(mimeMessage, ExternalProxy.context, uid);
+
+            }
+
+//            emailRepository.removeIncompleteUids(uid);
+//            emailRepository.incrementStoredMessages();
         } catch (MessagingException e) {
             e.printStackTrace();
-            emailRepository.addIncompleteUids(uid);
             emailRepository.notifyIncompleteEmail(uid);
 
         } catch (FolderException e) {
             e.printStackTrace();
-            emailRepository.addIncompleteUids(uid);
             emailRepository.notifyIncompleteEmail(uid);
 
         } catch (CouchbaseLiteException e) {
             e.printStackTrace();
-            emailRepository.addIncompleteUids(uid);
             emailRepository.notifyIncompleteEmail(uid);
 
         } catch (IOException e) {
             e.printStackTrace();
-            emailRepository.addIncompleteUids(uid);
             emailRepository.notifyIncompleteEmail(uid);
 
         }

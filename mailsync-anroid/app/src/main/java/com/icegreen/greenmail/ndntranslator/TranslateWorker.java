@@ -25,6 +25,7 @@ import java.io.ObjectOutputStream;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
+import edu.ua.cs.nrl.mailsync.EmailRepository;
 import edu.ua.cs.nrl.mailsync.database.NdnDBConnection;
 import edu.ua.cs.nrl.mailsync.database.NdnDBConnectionFactory;
 
@@ -33,7 +34,7 @@ public class TranslateWorker {
     public static String probeSize;
     public final static String TAG = "TranslateWorker";
 
-    public static void start(MimeMessage mimeMessage, Context context) throws
+    public static void start(MimeMessage mimeMessage, Context context, long uid) throws
             FolderException, IOException, CouchbaseLiteException, MessagingException {
         // Initialize IMAP-to-NDN translators
         NdnTranslator ndnTranslator = TranslatorFactory.getNdnTranslator("IMAP", context);
@@ -69,6 +70,7 @@ public class TranslateWorker {
         );
 
         ndnTranslator.saveData(attributeName, attributeData, "Attribute");
+        Log.d(TAG,"Attribute Saved " + attributeName);
 
         /**
          * Deal with MailFolder
@@ -240,5 +242,10 @@ public class TranslateWorker {
             Log.d(TAG, "Mimemessage Saved " + mimeMessageName);
 
         }
+        EmailRepository emailRepository = new EmailRepository();
+        emailRepository.removeIncompleteUids(uid);
+        emailRepository.incrementStoredMessages();
+        System.out.println("Saved Email with UID: " + uid);
+        emailRepository.getAllUids();
     }
 }

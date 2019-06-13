@@ -53,7 +53,7 @@ public class EmailRepository {
     private static Context context;
     private MutableLiveData<Boolean> networkStatus;
     private static View view;
-    private static int storedMessages;
+    private static int storedMessages = 0;
     private static final String TAG = "EmailRepo";
     TextView textView;
     private static Button runServerButton;
@@ -61,7 +61,7 @@ public class EmailRepository {
     private static ArrayList<Long> incompleteUids = new ArrayList<>();
     public static boolean isIncomplete = false;
     //Keeps track of max amount of emails that can be stored when refreshed
-    public static int maxEmailsStored;
+    public static int maxEmailsStored = 0;
 
     public EmailRepository(Context context, String userEmail, String userPassword) {
         this.context = context;
@@ -74,7 +74,7 @@ public class EmailRepository {
     }
 
     //Adds uids of emails that are not completed
-    public void addIncompleteUids(long uid) {
+    synchronized public void addIncompleteUids(long uid) {
         if(incompleteUids.indexOf(uid)==-1){
             incompleteUids.add(uid);
             System.out.println("Uid : " + uid + "Was added");
@@ -85,10 +85,16 @@ public class EmailRepository {
 
     //Gets all the uids in the array
     public void getAllUids(){
-        System.out.println("Uids in the list are");
-            for( long i: incompleteUids){
-                System.out.print(i + " ");
+        if(incompleteUids==null){
+            System.out.println("Array List is empty");
+        }
+        if(incompleteUids!=null){
+            System.out.println("Uids in the list are");
+            for (int i=0;i<incompleteUids.size();i++){
+                System.out.println("uid = " + incompleteUids.get(i));
             }
+        }
+
     }
 
     //Notifies user if an email is not stored completely
@@ -109,6 +115,7 @@ public class EmailRepository {
     //Removes uid from the list of uids
     synchronized public void removeIncompleteUids(long uid) {
         incompleteUids.remove(uid);
+        System.out.println("Removed uid " + uid);
         if (incompleteUids.isEmpty()) {
             isIncomplete = false;
         }
@@ -460,7 +467,7 @@ public class EmailRepository {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             public void run() {
-                Toast.makeText(context, text, Toast.LENGTH_LONG).show();
+                Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
 
             }
         });
