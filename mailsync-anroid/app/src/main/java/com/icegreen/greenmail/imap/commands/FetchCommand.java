@@ -125,7 +125,6 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                         long uid = idRange.getLowVal();
                         System.out.println("Uid of range " + uid);
                         System.out.println(">>>> Fetching UID(1): " + uid);
-                        Thread.sleep(3000);
                         NdnFolder.syncNumber++;
                         saveToNdnStorage(imapFolder, uid);
                     }
