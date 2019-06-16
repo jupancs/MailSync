@@ -39,13 +39,13 @@ public class TranslateWorker {
         // Initialize IMAP-to-NDN translators
         NdnTranslator ndnTranslator = TranslatorFactory.getNdnTranslator("IMAP", context);
 
-        DatabaseConfiguration config = new DatabaseConfiguration(context);
-        Database database = new Database("Probe", config);
-
-        NdnDBConnection ndnDBConnection = NdnDBConnectionFactory.getDBConnection(
-                "couchbaseLite",
-                context
-        );
+//        DatabaseConfiguration config = new DatabaseConfiguration(context);
+//        Database database = new Database("Probe", config);
+//
+//        NdnDBConnection ndnDBConnection = NdnDBConnectionFactory.getDBConnection(
+//                "couchbaseLite",
+//                context
+//        );
 
         KeyChain keyChain = ExternalProxy.ndnMailSyncOneThread.keyChain_;
         Name certificateName = ExternalProxy.ndnMailSyncOneThread.certificateName_;
@@ -247,5 +247,7 @@ public class TranslateWorker {
         emailRepository.incrementStoredMessages();
         System.out.println("Saved Email with UID: " + uid);
         emailRepository.getAllUids();
+        System.out.println("Translate Worker Ended");
+        return;
     }
 }

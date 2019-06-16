@@ -268,7 +268,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                 mimeMessage = new MimeMessage(mimeMessage);
                 NdnFolder.syncNumber++;
                 NdnFolder.messgeID.add(mimeMessage.getMessageID());
-                TranslateWorker.start(mimeMessage, ExternalProxy.context, uid, mimeMessage.getMessageID());
+                TranslateWorker.start(mimeMessage, ExternalProxy.context, uid);
                 NdnFolder.printMsgIds();
 
             }
