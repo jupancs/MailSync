@@ -140,8 +140,8 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
                 "couchbaseLite",
                 context
         );
-
         Data data = new Data(interest.getName());
+        System.out.println("Interest recieved with name" + prefix.toString() + " with adu: " + adu + "interest " + interest.toUri());
 
         if (adu.equals("CAPABILITY")) {
             contentString = "IMAP4rev1 LITERAL+ SORT UIDPLUS";
@@ -206,7 +206,9 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
                     for (Result result : mailFolderResult) {
                         System.out.println("*(*(*(*(*(*(*(*(*((*(");
                         contentByte = result.getBlob("content").getContent();
+                        System.out.println("Content Byte is " + contentByte);
                     }
+
 //          List<Result> list= mailFolderResult.allResults();
 
                 } catch (CouchbaseLiteException e) {
@@ -236,8 +238,15 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
 
                     for (Result result : mimeMessageResult) {
                         contentByte = result.getBlob("content").getContent();
-                        toast(context, "MailSync will sync" + i + "Emails");
                         i++;
+                    }
+                    toast(context, "MailSync will sync" + i + "Emails");
+                    //if i==syncnumber that means all the emails were synced and the sync number can be reset to 0 and the messageID list can cleared
+                    // As both are already sent as mailfolder and were used correctly
+                    System.out.println("Sync number is " + NdnFolder.syncNumber + "i = " + i);
+                    if (i == NdnFolder.syncNumber) {
+                        NdnFolder.syncNumber = 0;
+                        NdnFolder.messgeID.clear();
                     }
                     System.out.println("***********************************");
                     System.out.println("content size: " + contentByte.length);
