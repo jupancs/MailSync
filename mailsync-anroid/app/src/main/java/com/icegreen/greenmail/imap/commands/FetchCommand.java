@@ -125,7 +125,8 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                         long uid = idRange.getLowVal();
                         System.out.println("Uid of range " + uid);
                         System.out.println(">>>> Fetching UID(1): " + uid);
-                        NdnFolder.syncNumber++;
+//                        NdnFolder.syncNumber++;
+                        System.out.println("Sync number is "+ NdnFolder.syncNumber);
                         saveToNdnStorage(imapFolder, uid);
                     }
 
@@ -177,8 +178,9 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
 
                     }
                 }
-                NdnFolder.messgeID.clear();
-                NdnFolder.syncNumber = 0;
+
+//                NdnFolder.messgeID.clear();
+//                NdnFolder.syncNumber = 0;
                 store.close();
 
             } catch (NoSuchProviderException e) {
@@ -264,8 +266,10 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                 Message message = folder.getMessage(getMsn(uid, folder));
                 MimeMessage mimeMessage = (MimeMessage) message;
                 mimeMessage = new MimeMessage(mimeMessage);
+                NdnFolder.syncNumber++;
                 NdnFolder.messgeID.add(mimeMessage.getMessageID());
-                TranslateWorker.start(mimeMessage, ExternalProxy.context, uid);
+                TranslateWorker.start(mimeMessage, ExternalProxy.context, uid, mimeMessage.getMessageID());
+                NdnFolder.printMsgIds();
 
             }
 
@@ -273,18 +277,37 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
 //            emailRepository.incrementStoredMessages();
         } catch (MessagingException e) {
             e.printStackTrace();
+            //If it was not stored properly then it cannot be sycned so reduce the sync number and removed
+            // the messageID that was added initially
+            if(NdnFolder.syncNumber!=0 && !NdnFolder.messgeID.isEmpty()){
+                NdnFolder.syncNumber--;
+                NdnFolder.messgeID.remove(NdnFolder.messgeID.size()-1);
+            }
             emailRepository.notifyIncompleteEmail(uid);
+
 
         } catch (FolderException e) {
             e.printStackTrace();
+            if(NdnFolder.syncNumber!=0 && !NdnFolder.messgeID.isEmpty()){
+                NdnFolder.syncNumber--;
+                NdnFolder.messgeID.remove(NdnFolder.messgeID.size()-1);
+            }
             emailRepository.notifyIncompleteEmail(uid);
 
         } catch (CouchbaseLiteException e) {
             e.printStackTrace();
+            if(NdnFolder.syncNumber!=0 && !NdnFolder.messgeID.isEmpty()){
+                NdnFolder.syncNumber--;
+                NdnFolder.messgeID.remove(NdnFolder.messgeID.size()-1);
+            }
             emailRepository.notifyIncompleteEmail(uid);
 
         } catch (IOException e) {
             e.printStackTrace();
+            if(NdnFolder.syncNumber!=0 && !NdnFolder.messgeID.isEmpty()){
+                NdnFolder.syncNumber--;
+                NdnFolder.messgeID.remove(NdnFolder.messgeID.size()-1);
+            }
             emailRepository.notifyIncompleteEmail(uid);
 
         }
