@@ -75,7 +75,7 @@ public class EmailRepository {
 
     //Adds uids of emails that are not completed
     synchronized public void addIncompleteUids(long uid) {
-        if(incompleteUids.indexOf(uid)==-1){
+        if (incompleteUids.indexOf(uid) == -1) {
             incompleteUids.add(uid);
             System.out.println("Uid : " + uid + "Was added");
         }
@@ -84,13 +84,13 @@ public class EmailRepository {
     }
 
     //Gets all the uids in the array
-    public void getAllUids(){
-        if(incompleteUids==null){
+    public void getAllUids() {
+        if (incompleteUids == null) {
             System.out.println("Array List is empty");
         }
-        if(incompleteUids!=null){
+        if (incompleteUids != null) {
             System.out.println("Uids in the list are");
-            for (int i=0;i<incompleteUids.size();i++){
+            for (int i = 0; i < incompleteUids.size(); i++) {
                 System.out.println("uid = " + incompleteUids.get(i));
             }
         }
@@ -309,7 +309,7 @@ public class EmailRepository {
 
         // Start the relayer service
 //        startRelayer();
-        if(isNetworkAvailable()){
+        if (isNetworkAvailable()) {
             startRelayer();
         }
 
@@ -419,7 +419,6 @@ public class EmailRepository {
 //    }
 
 
-
     public void ndnMailExecution() {
         scheduleTaskExecutor = Executors.newScheduledThreadPool(5);
         scheduleTaskExecutor.scheduleAtFixedRate(new Runnable() {
@@ -427,9 +426,20 @@ public class EmailRepository {
                 ExternalProxy.ndnMailSyncOneThread.start();
             }
         }, 0, 10, TimeUnit.MILLISECONDS);
-
         isFirstTime = false;
     }
+
+//    public boolean shutdownlAllDbconnections(){
+//        scheduleTaskExecutor.shutdownNow();
+//        try {
+//            Thread.sleep(1000);
+//
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//        return scheduleTaskExecutor.isTerminated();
+//
+//    }
 
     public void startServer(String userEmail, String userPassword, View view) {
         System.out.println("In EmailRepo" + "username:" + userEmail + userPassword);
@@ -453,10 +463,13 @@ public class EmailRepository {
 
     public void clearDatabase() {
         try {
-            new Database("MailFolder", ndnDBConnection.getConfig()).delete();
+
             new Database("Attribute", ndnDBConnection.getConfig()).delete();
             new Database("MimeMessage", ndnDBConnection.getConfig()).delete();
             new Database("MessageID", ndnDBConnection.getConfig()).delete();
+            new Database("MailFolder", ndnDBConnection.getConfig()).delete();
+
+
         } catch (CouchbaseLiteException e) {
             e.printStackTrace();
         }
