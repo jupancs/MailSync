@@ -120,21 +120,21 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                 // and  EmailRepository.getIncompleteUids() gives the list of incomplete uids to complete
 
 
-                if (fetch.internalDate) {
-                    for (IdRange idRange : idSet) {
-                        long uid = idRange.getLowVal();
-                        System.out.println("Uid of range " + uid);
-                        System.out.println(">>>> Fetching UID(1): " + uid);
-//                        NdnFolder.syncNumber++;
-                        System.out.println("Sync number is "+ NdnFolder.syncNumber);
-                        saveToNdnStorage(imapFolder, uid);
-                    }
-
-
-                }
+//                if (fetch.internalDate) {
+//                    for (IdRange idRange : idSet) {
+//                        long uid = idRange.getLowVal();
+//                        System.out.println("Uid of range " + uid);
+//                        System.out.println(">>>> Fetching UID(1): " + uid);
+////                        NdnFolder.syncNumber++;
+//                        System.out.println("Sync number is "+ NdnFolder.syncNumber);
+//                        saveToNdnStorage(imapFolder, uid);
+//                    }
+//
+//
+//                }
                 //saves the email to ndnstorage and removes the email from
                 // the array list
-                if (EmailRepository.getIsIncomplete() && emailRepository.isNetworkAvailable() ) {
+                if (fetch.internalDate||(EmailRepository.getIsIncomplete() && emailRepository.isNetworkAvailable())) {
                     ArrayList<Long> incomplete = EmailRepository.getIncompleteUids();
 //                    while (!incomplete.isEmpty() && emailRepository.isNetworkAvailable()) {
 //                        long uid = incomplete.get(i);
@@ -170,6 +170,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                             long uid = incomplete.get(size-1);
                             System.out.println(">>>> Fetching UID(2): " + uid);
                             if(emailRepository.isNetworkAvailable()){
+//                                NdnFolder.syncNumber++;
                                 saveToNdnStorage(imapFolder, uid);
                                 size--;
                             }
@@ -268,6 +269,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                 mimeMessage = new MimeMessage(mimeMessage);
                 NdnFolder.syncNumber++;
                 NdnFolder.messgeID.add(mimeMessage.getMessageID());
+                EmailRepository.nextUid=uid+1;
                 TranslateWorker.start(mimeMessage, ExternalProxy.context, uid);
                 NdnFolder.printMsgIds();
 
@@ -284,7 +286,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                 NdnFolder.messgeID.remove(NdnFolder.messgeID.size()-1);
             }
             emailRepository.notifyIncompleteEmail(uid);
-
+            EmailRepository.nextUid--;
 
         } catch (FolderException e) {
             e.printStackTrace();
@@ -293,6 +295,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                 NdnFolder.messgeID.remove(NdnFolder.messgeID.size()-1);
             }
             emailRepository.notifyIncompleteEmail(uid);
+            EmailRepository.nextUid--;
 
         } catch (CouchbaseLiteException e) {
             e.printStackTrace();
@@ -301,6 +304,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                 NdnFolder.messgeID.remove(NdnFolder.messgeID.size()-1);
             }
             emailRepository.notifyIncompleteEmail(uid);
+            EmailRepository.nextUid--;
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -309,7 +313,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                 NdnFolder.messgeID.remove(NdnFolder.messgeID.size()-1);
             }
             emailRepository.notifyIncompleteEmail(uid);
-
+            EmailRepository.nextUid--;
         }
     }
 
