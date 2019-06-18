@@ -17,6 +17,8 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.search.FlagTerm;
 import javax.mail.search.SearchTerm;
 
+import edu.ua.cs.nrl.mailsync.EmailRepository;
+
 public class NdnFolder {
 
     public static IMAPFolder folder;
@@ -44,18 +46,20 @@ public class NdnFolder {
         snapshot.map = new HashMap<>();
         snapshot.flags = MessageFlags.format(folder.getPermanentFlags());
         System.out.println("$$$$$$$$$$$$$$$$ check 1 $$$$$$$$$$$$$$$$");
-        snapshot.exists = folder.getMessageCount();
+        //The number of messages in the laptop mailbox is the number of messages in the mobile mailbox - the number of new messages that need to be synced
+        snapshot.exists = folder.getMessageCount()- EmailRepository.getIncompleteUids().size()+1;
         System.out.println("$$$$$$$$$$$$$$$$ check 2 $$$$$$$$$$$$$$$$");
         snapshot.recent = getRecentCount(false);
         System.out.println("$$$$$$$$$$$$$$$$ check 3 $$$$$$$$$$$$$$$$");
         snapshot.uidvalidity = folder.getUIDValidity();
         System.out.println("$$$$$$$$$$$$$$$$ check 4 $$$$$$$$$$$$$$$$");
-        snapshot.uidnext = folder.getUIDNext();
+        snapshot.uidnext = EmailRepository.nextUid;
         System.out.println("$$$$$$$$$$$$$$$$ check 5 $$$$$$$$$$$$$$$$");
         snapshot.unseen = getFirstUnseen();
         System.out.println("$$$$$$$$$$$$$$$$ check 6 $$$$$$$$$$$$$$$$");
         snapshot.complete = "READ-ONLY";
-        snapshot.size = folder.getMessageCount();
+        //The size is equal to the above comment
+        snapshot.size = folder.getMessageCount()- EmailRepository.getIncompleteUids().size()+1;
         snapshot.flagMap = flagsMap;
         System.out.println("$$$$$$$$$$$$$$$$ check 7 $$$$$$$$$$$$$$$$");
         snapshot.messageUids = Longs.toArray(messageUidList);
@@ -64,6 +68,8 @@ public class NdnFolder {
         System.out.println("$$$$$$$$$$$$$$$$ check 8 $$$$$$$$$$$$$$$$");
         snapshot.messageID = messgeID;
         snapshot.syncAmount = syncNumber;
+        //Initial size is the size of laptop mailbox without the new message being synced
+        snapshot.initSize=folder.getMessageCount()-EmailRepository.maxEmailsStored;
         return snapshot;
     }
 
