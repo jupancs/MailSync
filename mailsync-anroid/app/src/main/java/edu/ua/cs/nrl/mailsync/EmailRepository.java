@@ -56,6 +56,7 @@ public class EmailRepository {
     private static int storedMessages = 0;
     private static final String TAG = "EmailRepo";
     TextView textView;
+    public static long nextUid; //Keeps track of the uid of next mail to follow the current one
     private static Button runServerButton;
     public static boolean stop = false;
     private static ArrayList<Long> incompleteUids = new ArrayList<>();
