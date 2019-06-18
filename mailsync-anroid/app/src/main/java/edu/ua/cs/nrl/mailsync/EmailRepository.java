@@ -17,6 +17,7 @@ import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.icegreen.greenmail.ExternalProxy;
 import com.icegreen.greenmail.ndnproxy.NDNMailSyncOneThread;
+import com.icegreen.greenmail.ndntranslator.ImapToNdnTranslator;
 import com.intel.jndn.management.ManagementException;
 
 import net.named_data.jndn.Name;
@@ -464,11 +465,12 @@ public class EmailRepository {
 
     public void clearDatabase() {
         try {
+            ImapToNdnTranslator.stopDB();
+            new Database("Attribute", ndnDBConnection.getConfig()).close();
+            new Database("MimeMessage", ndnDBConnection.getConfig()).close();
+            new Database("MessageID", ndnDBConnection.getConfig()).close();
+            new Database("MailFolder", ndnDBConnection.getConfig()).close();
 
-            new Database("Attribute", ndnDBConnection.getConfig()).delete();
-            new Database("MimeMessage", ndnDBConnection.getConfig()).delete();
-            new Database("MessageID", ndnDBConnection.getConfig()).delete();
-            new Database("MailFolder", ndnDBConnection.getConfig()).delete();
 
 
         } catch (CouchbaseLiteException e) {

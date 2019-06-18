@@ -28,7 +28,7 @@ import edu.ua.cs.nrl.mailsync.fragments.BaseFragment;
 
 public class ImapToNdnTranslator extends BaseFragment implements NdnTranslator {
 
-  private NdnDBConnection ndnDBConnection;
+  private static NdnDBConnection ndnDBConnection;
 
   public ImapToNdnTranslator() {}
 
@@ -49,6 +49,10 @@ public class ImapToNdnTranslator extends BaseFragment implements NdnTranslator {
     }
 
     return encodedString;
+  }
+//Offers ndnDbConnection for garbage collection and remmoves all connection with it
+  public static void stopDB(){
+    ndnDBConnection = null;
   }
 
   @Override
