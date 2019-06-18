@@ -227,10 +227,10 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
                         i++;
                     }
                     toast(context, "MailSync will sync" + i + "Emails");
-                    //if i==syncnumber that means all the emails were synced and the sync number can be reset to 0 and the messageID list can cleared
+                    //if i==maxEmailsStored that means all the emails were synced and the sync number can be reset to 0 and the messageID list can cleared
                     // As both are already sent as mailfolder and were used correctly
                     System.out.println("Sync number is " + NdnFolder.syncNumber + "i = " + i);
-                    if (i == NdnFolder.syncNumber) {
+                    if (i == EmailRepository.maxEmailsStored) {
                         NdnFolder.syncNumber = 0;
                         NdnFolder.messgeID.clear();
                     }
