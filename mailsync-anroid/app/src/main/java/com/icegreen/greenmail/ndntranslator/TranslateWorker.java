@@ -4,8 +4,6 @@ import android.content.Context;
 import android.util.Log;
 
 import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.Database;
-import com.couchbase.lite.DatabaseConfiguration;
 import com.google.common.io.BaseEncoding;
 import com.icegreen.greenmail.ExternalProxy;
 import com.icegreen.greenmail.ndnproxy.NdnFolder;
@@ -26,8 +24,6 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 import edu.ua.cs.nrl.mailsync.EmailRepository;
-import edu.ua.cs.nrl.mailsync.database.NdnDBConnection;
-import edu.ua.cs.nrl.mailsync.database.NdnDBConnectionFactory;
 
 public class TranslateWorker {
 
@@ -70,7 +66,7 @@ public class TranslateWorker {
         );
 
         ndnTranslator.saveData(attributeName, attributeData, "Attribute");
-        Log.d(TAG,"Attribute Saved " + attributeName);
+        Log.d(TAG, "Attribute Saved " + attributeName);
 
         /**
          * Deal with MailFolder
@@ -100,6 +96,10 @@ public class TranslateWorker {
         System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^");
         System.out.println(" Ding Ding");
         oos.writeObject(NdnFolder.getSnapshot());
+        System.out.println("Exists" + NdnFolder.snapshot.exists + "Recent Count" + NdnFolder.snapshot.recent + "UidValidity" + NdnFolder.snapshot.uidvalidity + "Uidnext"
+                + NdnFolder.snapshot.uidnext + "\n" + "First unseen" + NdnFolder.snapshot.unseen + "Size" + NdnFolder.snapshot.size + "Last Size" + NdnFolder.lastSize
+                + "Sync number" + NdnFolder.snapshot.syncAmount);
+        System.out.println("messageUids size: : : : : " + NdnFolder.messageUidList.size());
         System.out.println(" Da Da");
         System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^");
         oos.flush();
