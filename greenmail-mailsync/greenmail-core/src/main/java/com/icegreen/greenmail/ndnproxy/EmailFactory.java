@@ -78,6 +78,9 @@ public class EmailFactory {
 
       int size = snapshot.size;
       System.out.println(">>>> Size >>>> " + size);
+      System.out.println(">>> syncAmount: " + String.valueOf(NDNMailSyncConsumerProducer.mailbox.syncAmount));
+      System.out.println(">>>Initial Size: " + snapshot.initSize);
+      int initSize = snapshot.initSize;
       for (int i = 0; i < NDNMailSyncConsumerProducer.mailbox.syncAmount; i++) {
         String messageID = snapshot.messageID.get(i);
         ExternalProxy.expressInterest(
@@ -127,9 +130,10 @@ public class EmailFactory {
         try {
           MimeMessage message = new MimeMessage(ExternalProxy.session, baisMimeMessage);
           int uidSize = snapshot.messageUids.length;
-          System.out.println(">>>>>> UID: " + snapshot.messageUids[uidSize - 1 - i]);
-          NdnFolder.uidToMime.put(snapshot.messageUids[uidSize - 1 - i], message);
-          NdnFolder.uidToAttr.put(snapshot.messageUids[uidSize - 1 - i], attribute);
+          //UID will be processed from lowest uid to largest uid and init size is the starting point
+          System.out.println(">>>>>> UID: " + snapshot.messageUids[initSize + i]);
+          NdnFolder.uidToMime.put(snapshot.messageUids[initSize + i], message);
+          NdnFolder.uidToAttr.put(snapshot.messageUids[initSize + i], attribute);
 
         } catch (MessagingException e) {
           e.printStackTrace();
