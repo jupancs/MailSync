@@ -264,10 +264,10 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
     private void saveToNdnStorage(IMAPFolder folder, long uid) {
         try {
             if(emailRepository.isNetworkAvailable()){
+                NdnFolder.syncNumber++;
                 Message message = folder.getMessage(getMsn(uid, folder));
                 MimeMessage mimeMessage = (MimeMessage) message;
                 mimeMessage = new MimeMessage(mimeMessage);
-                NdnFolder.syncNumber++;
                 NdnFolder.messgeID.add(mimeMessage.getMessageID());
                 EmailRepository.nextUid=uid+1;
                 TranslateWorker.start(mimeMessage, ExternalProxy.context, uid);
@@ -281,36 +281,32 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
             e.printStackTrace();
             //If it was not stored properly then it cannot be sycned so reduce the sync number and removed
             // the messageID that was added initially
-            if(NdnFolder.syncNumber!=0 && !NdnFolder.messgeID.isEmpty()){
+            if(NdnFolder.syncNumber!=0){
                 NdnFolder.syncNumber--;
-                NdnFolder.messgeID.remove(NdnFolder.messgeID.size()-1);
             }
             emailRepository.notifyIncompleteEmail(uid);
             EmailRepository.nextUid--;
 
         } catch (FolderException e) {
             e.printStackTrace();
-            if(NdnFolder.syncNumber!=0 && !NdnFolder.messgeID.isEmpty()){
+            if(NdnFolder.syncNumber!=0){
                 NdnFolder.syncNumber--;
-                NdnFolder.messgeID.remove(NdnFolder.messgeID.size()-1);
             }
             emailRepository.notifyIncompleteEmail(uid);
             EmailRepository.nextUid--;
 
         } catch (CouchbaseLiteException e) {
             e.printStackTrace();
-            if(NdnFolder.syncNumber!=0 && !NdnFolder.messgeID.isEmpty()){
+            if(NdnFolder.syncNumber!=0){
                 NdnFolder.syncNumber--;
-                NdnFolder.messgeID.remove(NdnFolder.messgeID.size()-1);
             }
             emailRepository.notifyIncompleteEmail(uid);
             EmailRepository.nextUid--;
 
         } catch (IOException e) {
             e.printStackTrace();
-            if(NdnFolder.syncNumber!=0 && !NdnFolder.messgeID.isEmpty()){
+            if(NdnFolder.syncNumber!=0){
                 NdnFolder.syncNumber--;
-                NdnFolder.messgeID.remove(NdnFolder.messgeID.size()-1);
             }
             emailRepository.notifyIncompleteEmail(uid);
             EmailRepository.nextUid--;

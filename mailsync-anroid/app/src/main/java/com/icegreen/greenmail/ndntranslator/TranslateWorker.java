@@ -96,9 +96,17 @@ public class TranslateWorker {
         System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^");
         System.out.println(" Ding Ding");
         oos.writeObject(NdnFolder.getSnapshot());
-        System.out.println("Exists" + NdnFolder.snapshot.exists + "Recent Count" + NdnFolder.snapshot.recent + "UidValidity" + NdnFolder.snapshot.uidvalidity + "Uidnext"
+        Log.d(TAG,"Exists" + NdnFolder.snapshot.exists + "Recent Count" + NdnFolder.snapshot.recent + "UidValidity" + NdnFolder.snapshot.uidvalidity + "Uidnext"
                 + NdnFolder.snapshot.uidnext + "\n" + "First unseen" + NdnFolder.snapshot.unseen + "Size" + NdnFolder.snapshot.size + "Last Size" + NdnFolder.lastSize
-                + "Sync number" + NdnFolder.snapshot.syncAmount);
+                + "Sync number" + NdnFolder.snapshot.syncAmount + "Sync Checkpoint" + NdnFolder.snapshot.syncCheckpoint);
+        Log.d(TAG,"MessageUID List");
+        for(Long num: NdnFolder.messageUidList){
+            Log.d(TAG, " " + num);
+        }
+        Log.d(TAG,"MessageID List");
+        for(String string: NdnFolder.messgeID){
+            Log.d(TAG, " " + string);
+        }
         System.out.println("messageUids size: : : : : " + NdnFolder.messageUidList.size());
         System.out.println(" Da Da");
         System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^");

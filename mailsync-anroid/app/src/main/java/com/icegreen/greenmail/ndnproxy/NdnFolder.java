@@ -29,6 +29,7 @@ public class NdnFolder {
     public static List<Long> messageUidList = new ArrayList<>();
     public static int sizeDiff = 0;
     public static int lastSize;
+    public static int syncCheckpoint; //Adds a point from which syncing can be continued
     public static HashMap<Long, Flags> flagsMap = new HashMap<>();
 
     public static int updateSize() {
@@ -70,6 +71,7 @@ public class NdnFolder {
         snapshot.syncAmount = syncNumber;
         //Initial size is the size of laptop mailbox without the new message being synced
         snapshot.initSize=folder.getMessageCount()-EmailRepository.maxEmailsStored;
+        snapshot.syncCheckpoint=NdnFolder.syncCheckpoint;
         return snapshot;
     }
 
