@@ -10,6 +10,7 @@ import android.os.StrictMode;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -167,6 +168,16 @@ public class EmailRepository {
 
             }
         });
+    }
+    //Updates progress bar and email stored in the UI
+    synchronized public void deleteAllStoredMessage(){
+        if (view == null) {
+            Log.d(TAG, "View is null inside increment");
+        }
+        storedMessages=0;
+        textView = view.findViewById(R.id.stored_emails);
+        updateText(Integer.toString(storedMessages));
+        updateProgress(0);
     }
 
     //returns stored messages
@@ -484,6 +495,16 @@ public class EmailRepository {
         handler.post(new Runnable() {
             public void run() {
                 Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
+
+            }
+        });
+    }
+    synchronized public void updateProgress(final int progress) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            public void run() {
+                ProgressBar progressBar = view.findViewById(R.id.download_bar);
+                progressBar.setProgress(progress);
 
             }
         });

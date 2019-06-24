@@ -237,8 +237,12 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
                             NdnFolder.syncCheckpoint+=NdnFolder.syncNumber;
                         }
                         NdnFolder.syncNumber = 0;
+//                        updateProgress(0);
                         System.out.println("In here !1!1!1" + "");
                         EmailRepository.maxEmailsStored = EmailRepository.maxEmailsStored - NdnFolder.syncNumber;
+                        EmailRepository emailRepository = new EmailRepository();
+                        emailRepository.updateText("Number of emails stored " + 0 + "/" + EmailRepository.maxEmailsStored);
+                        setMax(EmailRepository.maxEmailsStored);
                     }
                 } catch (CouchbaseLiteException e) {
                     e.printStackTrace();
@@ -329,6 +333,7 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
     //updates progress of the progressbar and since many threads could be running
     //a lock mechanism is added using synchronized
     synchronized public void updateProgress(final int progress) {
+        System.out.println("Working in Here mate");
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             public void run() {
