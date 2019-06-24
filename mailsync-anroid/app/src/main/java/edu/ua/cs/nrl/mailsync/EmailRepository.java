@@ -163,7 +163,7 @@ public class EmailRepository {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             public void run() {
-
+                textView = view.findViewById(R.id.stored_emails);
                 textView.setText(text);
 
             }

@@ -236,12 +236,13 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
                         if(NdnFolder.syncNumber>=1){
                             NdnFolder.syncCheckpoint+=NdnFolder.syncNumber;
                         }
-                        NdnFolder.syncNumber = 0;
+
 //                        updateProgress(0);
                         System.out.println("In here !1!1!1" + "");
                         EmailRepository.maxEmailsStored = EmailRepository.maxEmailsStored - NdnFolder.syncNumber;
+                        NdnFolder.syncNumber = 0;
                         EmailRepository emailRepository = new EmailRepository();
-                        emailRepository.updateText("Number of emails stored " + 0 + "/" + EmailRepository.maxEmailsStored);
+                        emailRepository.updateText(0 + "/" + EmailRepository.maxEmailsStored);
                         setMax(EmailRepository.maxEmailsStored);
                     }
                 } catch (CouchbaseLiteException e) {
