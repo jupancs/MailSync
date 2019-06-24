@@ -85,6 +85,7 @@ public class EmailFactory {
       System.out.println(">>>startPos: " + snapshot.syncCheckpoint);
       int initSize = snapshot.initSize;
       int startPos = snapshot.syncCheckpoint;
+      int uidStartPos = 0;
       //The emails should be synced from the startpoint which is the checkpoint or the position of the emails
       //synced last time
       for (int i = startPos; i < NDNMailSyncConsumerProducer.mailbox.syncAmount + startPos; i++) {
@@ -137,9 +138,9 @@ public class EmailFactory {
           MimeMessage message = new MimeMessage(ExternalProxy.session, baisMimeMessage);
           int uidSize = snapshot.messageUids.length;
           System.out.println(">>>>>> UID: " + snapshot.messageUids[initSize + i]);
-          NdnFolder.uidToMime.put(snapshot.messageUids[initSize + i], message);
-          NdnFolder.uidToAttr.put(snapshot.messageUids[initSize + i], attribute);
-
+          NdnFolder.uidToMime.put(snapshot.messageUids[initSize + uidStartPos], message);
+          NdnFolder.uidToAttr.put(snapshot.messageUids[initSize + uidStartPos], attribute);
+          uidStartPos++;
         } catch (MessagingException e) {
           e.printStackTrace();
         }
