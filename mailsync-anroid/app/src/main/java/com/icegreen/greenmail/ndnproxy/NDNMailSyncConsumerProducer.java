@@ -204,9 +204,9 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
                     // to be sent
                     setMax(emailRepository.getStoredMessages());
                     for (Result result : mailFolderResult) {
-                        System.out.println("*(*(*(*(*(*(*(*(*((*(");
+//                        System.out.println("*(*(*(*(*(*(*(*(*((*(");
                         contentByte = result.getBlob("content").getContent();
-                        System.out.println("Content Byte is " + contentByte);
+//                        System.out.println("Content Byte is " + contentByte);
                     }
 
 //          List<Result> list= mailFolderResult.allResults();
@@ -230,6 +230,7 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
                     System.out.println("Sync number is " + NdnFolder.syncNumber + "i = " + i + EmailRepository.maxEmailsStored + "SyncCheckpoint" + NdnFolder.syncCheckpoint);
                     if(NdnFolder.syncNumber>=1){
                         NdnFolder.syncNumber--;
+                        System.out.println("Sync Amount decreased to " +  NdnFolder.syncNumber);
                         NdnFolder.syncCheckpoint++;
                     }
 

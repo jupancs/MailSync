@@ -150,9 +150,7 @@ public class EmailRepository {
     //Increments stored messages number and checks if the view is null if not then
     // the text view showing the stored messages is incremented
     synchronized public void incrementStoredMessages() {
-
         storedMessages++;
-
     }
 
     synchronized public void notifyStorageCompletion(){

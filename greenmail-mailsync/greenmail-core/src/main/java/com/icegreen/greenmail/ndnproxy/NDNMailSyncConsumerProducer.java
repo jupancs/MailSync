@@ -56,8 +56,8 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
     Name name = data.getName();
     String adu = name.get(4).toEscapedString();
 
-    System.out.println("Got data packet with name: " + name.toUri());
-    System.out.println("adu: " + adu);
+    // System.out.println("Got data packet with name: " + name.toUri());
+    // System.out.println("adu: " + adu);
 
     ByteBuffer content = data.getContent().buf();
 

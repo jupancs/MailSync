@@ -265,6 +265,8 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
         try {
             if(emailRepository.isNetworkAvailable()){
                 emailRepository.incrementStoredMessages();
+                System.out.println("Stored Message Count" + emailRepository.getStoredMessages());
+                System.out.println("Sync Amount increased to " +  NdnFolder.syncNumber);
                 NdnFolder.syncNumber++;
                 Message message = folder.getMessage(getMsn(uid, folder));
                 MimeMessage mimeMessage = (MimeMessage) message;

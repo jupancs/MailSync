@@ -202,6 +202,7 @@ public class TranslateWorker {
          * Deal with MimeMessage
          *
          */
+        Log.d(TAG,"Saving Mimemessage");
         String mimeMessageName = ndnTranslator.generateMimeMessageName(
                 "mailSync",
                 ExternalProxy.userEmail,
@@ -250,7 +251,7 @@ public class TranslateWorker {
             byte[] result = encoding.getImmutableArray();
 
             ndnTranslator.saveData(mimeMessageName + "/v" + i, result, "MimeMessage");
-            Log.d(TAG, "Mimemessage Saved " + mimeMessageName);
+//            Log.d(TAG, "Mimemessage Saved " + mimeMessageName);
 
         }
 

@@ -29,7 +29,7 @@ public class EmailFactory {
     ExternalProxy.setNDNResult(false);
     waitForReuslt();
     String contentString = ExternalProxy.getContentString();
-    System.out.println("Content string: " + contentString);
+    // System.out.println("Content string: " + contentString);
     int mailFolderSize = Integer.valueOf(contentString);
 
 
@@ -69,11 +69,11 @@ public class EmailFactory {
     if (!contentString.equals("")) {
       System.out.println(">>> MailFolder content: " + value);
       byte[] decodeByteArray = BaseEncoding.base64().decode(value);
-      System.out.println(">>> Decoded Value " + decodeByteArray.toString());
+      // System.out.println(">>> Decoded Value " + decodeByteArray.toString());
       ByteArrayInputStream bais = new ByteArrayInputStream(decodeByteArray);
       ois = new ObjectInputStream(bais);
       Snapshot snapshot = (Snapshot) ois.readObject();
-      System.out.println(">>> SnapShot: " + snapshot);
+      // System.out.println(">>> SnapShot: " + snapshot);
       NDNMailSyncConsumerProducer.mailbox = snapshot;
 
       /* ------------------------- Attribute ------------------------- */
@@ -136,9 +136,13 @@ public class EmailFactory {
         try {
           MimeMessage message = new MimeMessage(ExternalProxy.session, baisMimeMessage);
           int uidSize = snapshot.messageUids.length;
-          System.out.println(">>>>>> UID: " + snapshot.messageUids[initSize + i]);
-          NdnFolder.uidToMime.put(snapshot.messageUids[initSize + i], message);
-          NdnFolder.uidToAttr.put(snapshot.messageUids[initSize + i], attribute);
+          System.out.println("InitSize + i" + initSize+i + "uidSize" + uidSize);
+          if(initSize+i<uidSize)  {    
+            System.out.println(">>>>>> UID: " + snapshot.messageUids[initSize + i]);
+            NdnFolder.uidToMime.put(snapshot.messageUids[initSize + i], message);
+            NdnFolder.uidToAttr.put(snapshot.messageUids[initSize + i], attribute);
+          }
+      
         } catch (MessagingException e) {
           e.printStackTrace();
         }
