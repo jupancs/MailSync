@@ -7,6 +7,7 @@ import com.couchbase.lite.CouchbaseLiteException;
 import com.google.common.io.BaseEncoding;
 import com.icegreen.greenmail.ExternalProxy;
 import com.icegreen.greenmail.ndnproxy.NdnFolder;
+import com.icegreen.greenmail.ndnproxy.Snapshot;
 import com.icegreen.greenmail.store.FolderException;
 import com.icegreen.greenmail.store.SimpleMessageAttributes;
 
@@ -33,6 +34,7 @@ public class TranslateWorker {
     public static void start(MimeMessage mimeMessage, Context context, long uid) throws
             FolderException, IOException, CouchbaseLiteException, MessagingException {
         // Initialize IMAP-to-NDN translators
+        EmailRepository emailRepository = new EmailRepository();
         NdnTranslator ndnTranslator = TranslatorFactory.getNdnTranslator("IMAP", context);
 
 //        DatabaseConfiguration config = new DatabaseConfiguration(context);
@@ -95,10 +97,11 @@ public class TranslateWorker {
         byte[] byteArray;
         System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^");
         System.out.println(" Ding Ding");
-        oos.writeObject(NdnFolder.getSnapshot());
-        Log.d(TAG,"Exists" + NdnFolder.snapshot.exists + "Recent Count" + NdnFolder.snapshot.recent + "UidValidity" + NdnFolder.snapshot.uidvalidity + "Uidnext"
-                + NdnFolder.snapshot.uidnext + "\n" + "First unseen" + NdnFolder.snapshot.unseen + "Size" + NdnFolder.snapshot.size + "Last Size" + NdnFolder.lastSize
-                + "Sync number" + NdnFolder.snapshot.syncAmount + "Sync Checkpoint" + NdnFolder.snapshot.syncCheckpoint);
+        Snapshot snapshot = NdnFolder.getSnapshot();
+        oos.writeObject(snapshot);
+        Log.d(TAG,"Exists" + snapshot.exists + "Recent Count" + snapshot.recent + "UidValidity" +snapshot.uidvalidity + "Uidnext"
+                +snapshot.uidnext + "\n" + "First unseen" + snapshot.unseen + "Size" +snapshot.size + "Last Size" + NdnFolder.lastSize
+                + "Sync number" + snapshot.syncAmount + "Sync Checkpoint" +snapshot.syncCheckpoint + "InitSize" +snapshot.initSize);
         Log.d(TAG,"MessageUID List");
         for(Long num: NdnFolder.messageUidList){
             Log.d(TAG, " " + num);
@@ -250,11 +253,11 @@ public class TranslateWorker {
             Log.d(TAG, "Mimemessage Saved " + mimeMessageName);
 
         }
-        EmailRepository emailRepository = new EmailRepository();
-        emailRepository.removeIncompleteUids(uid);
-        emailRepository.incrementStoredMessages();
+
         System.out.println("Saved Email with UID: " + uid);
         emailRepository.getAllUids();
+        emailRepository.notifyStorageCompletion();
+        emailRepository.removeIncompleteUids(uid);
         System.out.println("Translate Worker Ended");
         return;
     }

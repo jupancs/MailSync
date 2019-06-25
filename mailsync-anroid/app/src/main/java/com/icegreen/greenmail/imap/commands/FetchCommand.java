@@ -264,6 +264,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
     private void saveToNdnStorage(IMAPFolder folder, long uid) {
         try {
             if(emailRepository.isNetworkAvailable()){
+                emailRepository.incrementStoredMessages();
                 NdnFolder.syncNumber++;
                 Message message = folder.getMessage(getMsn(uid, folder));
                 MimeMessage mimeMessage = (MimeMessage) message;
@@ -284,6 +285,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
             if(NdnFolder.syncNumber!=0){
                 NdnFolder.syncNumber--;
             }
+            emailRepository.decrementStoredMessages();
             emailRepository.notifyIncompleteEmail(uid);
             EmailRepository.nextUid--;
 
@@ -292,6 +294,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
             if(NdnFolder.syncNumber!=0){
                 NdnFolder.syncNumber--;
             }
+            emailRepository.decrementStoredMessages();
             emailRepository.notifyIncompleteEmail(uid);
             EmailRepository.nextUid--;
 
@@ -300,6 +303,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
             if(NdnFolder.syncNumber!=0){
                 NdnFolder.syncNumber--;
             }
+            emailRepository.decrementStoredMessages();
             emailRepository.notifyIncompleteEmail(uid);
             EmailRepository.nextUid--;
 
@@ -308,6 +312,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
             if(NdnFolder.syncNumber!=0){
                 NdnFolder.syncNumber--;
             }
+            emailRepository.decrementStoredMessages();
             emailRepository.notifyIncompleteEmail(uid);
             EmailRepository.nextUid--;
         }

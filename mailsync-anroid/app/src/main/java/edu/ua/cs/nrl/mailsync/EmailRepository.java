@@ -18,6 +18,7 @@ import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.icegreen.greenmail.ExternalProxy;
 import com.icegreen.greenmail.ndnproxy.NDNMailSyncOneThread;
+import com.icegreen.greenmail.ndnproxy.NdnFolder;
 import com.icegreen.greenmail.ndntranslator.ImapToNdnTranslator;
 import com.intel.jndn.management.ManagementException;
 
@@ -149,11 +150,25 @@ public class EmailRepository {
     //Increments stored messages number and checks if the view is null if not then
     // the text view showing the stored messages is incremented
     synchronized public void incrementStoredMessages() {
+
+        storedMessages++;
+
+    }
+
+    synchronized public void notifyStorageCompletion(){
         if (view == null) {
             Log.d(TAG, "View is null inside increment");
         }
-        storedMessages++;
         System.out.println("Email repo stored message " + storedMessages + "/" + maxEmailsStored);
+        textView = view.findViewById(R.id.stored_emails);
+        updateText(Integer.toString(storedMessages) + "/" + maxEmailsStored);
+    }
+    //Decrements stored messages
+    synchronized public void decrementStoredMessages() {
+        if (view == null) {
+            Log.d(TAG, "View is null inside increment");
+        }
+        storedMessages--;
         textView = view.findViewById(R.id.stored_emails);
         updateText(Integer.toString(storedMessages) + "/" + maxEmailsStored);
     }
@@ -476,6 +491,8 @@ public class EmailRepository {
 
     public void clearDatabase() {
         try {
+            NdnFolder.syncNumber=0;
+            NdnFolder.syncCheckpoint=0;
             ImapToNdnTranslator.stopDB();
             new Database("Attribute", ndnDBConnection.getConfig()).close();
             new Database("MimeMessage", ndnDBConnection.getConfig()).close();

@@ -224,27 +224,32 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
 
                     for (Result result : attributeResult) {
                         contentByte = result.getBlob("content").getContent();
-                        i++;
                     }
+                    i++;
                     toast(context, "MailSync will sync" + i + "Emails");
+                    System.out.println("Sync number is " + NdnFolder.syncNumber + "i = " + i + EmailRepository.maxEmailsStored + "SyncCheckpoint" + NdnFolder.syncCheckpoint);
+                    if(NdnFolder.syncNumber>=1){
+                        NdnFolder.syncNumber--;
+                        NdnFolder.syncCheckpoint++;
+                    }
+
                     //if i==maxEmailsStored that means all the emails were synced and the sync number can be reset to 0 and the messageID list can cleared
                     // As both are already sent as mailfolder and were used correctly
                     //Checkpoint is incremented by sync amount each time the mail folder is synced
                     // And max emails stored is decremented
-                    System.out.println("Sync number is " + NdnFolder.syncNumber + "i = " + i + EmailRepository.maxEmailsStored + "SyncCheckpoint" + NdnFolder.syncCheckpoint);
-                    if (i == EmailRepository.maxEmailsStored || i == NdnFolder.syncNumber) {
-                        if(NdnFolder.syncNumber>=1){
-                            NdnFolder.syncCheckpoint+=NdnFolder.syncNumber;
-                        }
-
-//                        updateProgress(0);
-                        System.out.println("In here !1!1!1" + "");
-                        EmailRepository.maxEmailsStored = EmailRepository.maxEmailsStored - NdnFolder.syncNumber;
-                        NdnFolder.syncNumber = 0;
-                        EmailRepository emailRepository = new EmailRepository();
-                        emailRepository.updateText(0 + "/" + EmailRepository.maxEmailsStored);
-                        setMax(EmailRepository.maxEmailsStored);
-                    }
+//                    if (i == EmailRepository.maxEmailsStored || i == NdnFolder.syncNumber) {
+//                        if(NdnFolder.syncNumber>=1){
+//                            NdnFolder.syncCheckpoint+=NdnFolder.syncNumber;
+//                        }
+//
+////                        updateProgress(0);
+//                        System.out.println("In here !1!1!1" + "");
+//                        EmailRepository.maxEmailsStored = EmailRepository.maxEmailsStored - NdnFolder.syncNumber;
+//                        NdnFolder.syncNumber = 0;
+//                        EmailRepository emailRepository = new EmailRepository();
+//                        emailRepository.updateText(0 + "/" + EmailRepository.maxEmailsStored);
+//                        setMax(EmailRepository.maxEmailsStored);
+//                    }
                 } catch (CouchbaseLiteException e) {
                     e.printStackTrace();
                 }
