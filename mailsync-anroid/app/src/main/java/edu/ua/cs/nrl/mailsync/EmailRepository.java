@@ -10,6 +10,7 @@ import android.os.StrictMode;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,6 +18,8 @@ import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.icegreen.greenmail.ExternalProxy;
 import com.icegreen.greenmail.ndnproxy.NDNMailSyncOneThread;
+import com.icegreen.greenmail.ndnproxy.NdnFolder;
+import com.icegreen.greenmail.ndntranslator.ImapToNdnTranslator;
 import com.intel.jndn.management.ManagementException;
 
 import net.named_data.jndn.Name;
@@ -56,6 +59,7 @@ public class EmailRepository {
     private static int storedMessages = 0;
     private static final String TAG = "EmailRepo";
     TextView textView;
+    public static long nextUid; //Keeps track of the uid of next mail to follow the current one
     private static Button runServerButton;
     public static boolean stop = false;
     private static ArrayList<Long> incompleteUids = new ArrayList<>();
@@ -75,7 +79,7 @@ public class EmailRepository {
 
     //Adds uids of emails that are not completed
     synchronized public void addIncompleteUids(long uid) {
-        if(incompleteUids.indexOf(uid)==-1){
+        if (incompleteUids.indexOf(uid) == -1) {
             incompleteUids.add(uid);
             System.out.println("Uid : " + uid + "Was added");
         }
@@ -84,13 +88,13 @@ public class EmailRepository {
     }
 
     //Gets all the uids in the array
-    public void getAllUids(){
-        if(incompleteUids==null){
+    public void getAllUids() {
+        if (incompleteUids == null) {
             System.out.println("Array List is empty");
         }
-        if(incompleteUids!=null){
+        if (incompleteUids != null) {
             System.out.println("Uids in the list are");
-            for (int i=0;i<incompleteUids.size();i++){
+            for (int i = 0; i < incompleteUids.size(); i++) {
                 System.out.println("uid = " + incompleteUids.get(i));
             }
         }
@@ -146,11 +150,25 @@ public class EmailRepository {
     //Increments stored messages number and checks if the view is null if not then
     // the text view showing the stored messages is incremented
     synchronized public void incrementStoredMessages() {
+
+        storedMessages++;
+
+    }
+
+    synchronized public void notifyStorageCompletion(){
         if (view == null) {
             Log.d(TAG, "View is null inside increment");
         }
-        storedMessages++;
         System.out.println("Email repo stored message " + storedMessages + "/" + maxEmailsStored);
+        textView = view.findViewById(R.id.stored_emails);
+        updateText(Integer.toString(storedMessages) + "/" + maxEmailsStored);
+    }
+    //Decrements stored messages
+    synchronized public void decrementStoredMessages() {
+        if (view == null) {
+            Log.d(TAG, "View is null inside increment");
+        }
+        storedMessages--;
         textView = view.findViewById(R.id.stored_emails);
         updateText(Integer.toString(storedMessages) + "/" + maxEmailsStored);
     }
@@ -160,11 +178,21 @@ public class EmailRepository {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             public void run() {
-
+                textView = view.findViewById(R.id.stored_emails);
                 textView.setText(text);
 
             }
         });
+    }
+    //Updates progress bar and email stored in the UI
+    synchronized public void deleteAllStoredMessage(){
+        if (view == null) {
+            Log.d(TAG, "View is null inside increment");
+        }
+        storedMessages=0;
+        textView = view.findViewById(R.id.stored_emails);
+        updateText(Integer.toString(storedMessages));
+        updateProgress(0);
     }
 
     //returns stored messages
@@ -309,7 +337,7 @@ public class EmailRepository {
 
         // Start the relayer service
 //        startRelayer();
-        if(isNetworkAvailable()){
+        if (isNetworkAvailable()) {
             startRelayer();
         }
 
@@ -419,7 +447,6 @@ public class EmailRepository {
 //    }
 
 
-
     public void ndnMailExecution() {
         scheduleTaskExecutor = Executors.newScheduledThreadPool(5);
         scheduleTaskExecutor.scheduleAtFixedRate(new Runnable() {
@@ -427,9 +454,20 @@ public class EmailRepository {
                 ExternalProxy.ndnMailSyncOneThread.start();
             }
         }, 0, 10, TimeUnit.MILLISECONDS);
-
         isFirstTime = false;
     }
+
+//    public boolean shutdownlAllDbconnections(){
+//        scheduleTaskExecutor.shutdownNow();
+//        try {
+//            Thread.sleep(1000);
+//
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//        return scheduleTaskExecutor.isTerminated();
+//
+//    }
 
     public void startServer(String userEmail, String userPassword, View view) {
         System.out.println("In EmailRepo" + "username:" + userEmail + userPassword);
@@ -453,10 +491,16 @@ public class EmailRepository {
 
     public void clearDatabase() {
         try {
-            new Database("MailFolder", ndnDBConnection.getConfig()).delete();
-            new Database("Attribute", ndnDBConnection.getConfig()).delete();
-            new Database("MimeMessage", ndnDBConnection.getConfig()).delete();
-            new Database("MessageID", ndnDBConnection.getConfig()).delete();
+            NdnFolder.syncNumber=0;
+            NdnFolder.syncCheckpoint=0;
+            ImapToNdnTranslator.stopDB();
+            new Database("Attribute", ndnDBConnection.getConfig()).close();
+            new Database("MimeMessage", ndnDBConnection.getConfig()).close();
+            new Database("MessageID", ndnDBConnection.getConfig()).close();
+            new Database("MailFolder", ndnDBConnection.getConfig()).close();
+
+
+
         } catch (CouchbaseLiteException e) {
             e.printStackTrace();
         }
@@ -468,6 +512,16 @@ public class EmailRepository {
         handler.post(new Runnable() {
             public void run() {
                 Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
+
+            }
+        });
+    }
+    synchronized public void updateProgress(final int progress) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            public void run() {
+                ProgressBar progressBar = view.findViewById(R.id.download_bar);
+                progressBar.setProgress(progress);
 
             }
         });

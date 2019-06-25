@@ -14,16 +14,16 @@ public class EmailFactory {
   public static void start() throws IOException, ClassNotFoundException {
     // Express NDN Interest
     /* ------------------------- MailFolder ------------------------- */
-//    ExternalProxy.expressInterest(
-//        "/mailSync/" + ExternalProxy.userEmail + "/inbox/1/MailFolder/1"
-//    );
-//    ExternalProxy.setNDNResult(false);
-//
-//    waitForReuslt();
-//
-//    // Decode the serialized string to Snapshot
-//    String contentString = ExternalProxy.getContentString();
-//    String value = contentString;
+    // ExternalProxy.expressInterest(
+    // "/mailSync/" + ExternalProxy.userEmail + "/inbox/1/MailFolder/1"
+    // );
+    // ExternalProxy.setNDNResult(false);
+    //
+    // waitForReuslt();
+    //
+    // // Decode the serialized string to Snapshot
+    // String contentString = ExternalProxy.getContentString();
+    // String value = contentString;
 
     ExternalProxy.expressInterest("/mailSync/" + ExternalProxy.userEmail + "/inbox/1/probe");
     ExternalProxy.setNDNResult(false);
@@ -67,18 +67,27 @@ public class EmailFactory {
 
     ObjectInputStream ois;
     if (!contentString.equals("")) {
-//      System.out.println(">>> MailFolder content: " + value);
+      System.out.println(">>> MailFolder content: " + value);
       byte[] decodeByteArray = BaseEncoding.base64().decode(value);
+      System.out.println(">>> Decoded Value " + decodeByteArray.toString());
       ByteArrayInputStream bais = new ByteArrayInputStream(decodeByteArray);
       ois = new ObjectInputStream(bais);
       Snapshot snapshot = (Snapshot) ois.readObject();
+      System.out.println(">>> SnapShot: " + snapshot);
       NDNMailSyncConsumerProducer.mailbox = snapshot;
 
       /* ------------------------- Attribute ------------------------- */
 
       int size = snapshot.size;
       System.out.println(">>>> Size >>>> " + size);
-      for (int i = 0; i < NDNMailSyncConsumerProducer.mailbox.syncAmount; i++) {
+      System.out.println(">>> syncAmount: " + String.valueOf(NDNMailSyncConsumerProducer.mailbox.syncAmount));
+      System.out.println(">>>Initial Size: " + snapshot.initSize);
+      System.out.println(">>>startPos: " + snapshot.syncCheckpoint);
+      int initSize = snapshot.initSize;
+      int startPos = snapshot.syncCheckpoint;
+      //The emails should be synced from the startpoint which is the checkpoint or the position of the emails
+      //synced last time
+      for (int i = startPos; i < NDNMailSyncConsumerProducer.mailbox.syncAmount + startPos; i++) {
         String messageID = snapshot.messageID.get(i);
         ExternalProxy.expressInterest(
             "/mailSync/" + ExternalProxy.userEmail + "/inbox/1/attribute/" + messageID
@@ -127,10 +136,9 @@ public class EmailFactory {
         try {
           MimeMessage message = new MimeMessage(ExternalProxy.session, baisMimeMessage);
           int uidSize = snapshot.messageUids.length;
-          System.out.println(">>>>>> UID: " + snapshot.messageUids[uidSize - 1 - i]);
-          NdnFolder.uidToMime.put(snapshot.messageUids[uidSize - 1 - i], message);
-          NdnFolder.uidToAttr.put(snapshot.messageUids[uidSize - 1 - i], attribute);
-
+          System.out.println(">>>>>> UID: " + snapshot.messageUids[initSize + i]);
+          NdnFolder.uidToMime.put(snapshot.messageUids[initSize + i], message);
+          NdnFolder.uidToAttr.put(snapshot.messageUids[initSize + i], attribute);
         } catch (MessagingException e) {
           e.printStackTrace();
         }

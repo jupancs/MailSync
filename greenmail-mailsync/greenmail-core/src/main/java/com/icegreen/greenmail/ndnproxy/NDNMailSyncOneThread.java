@@ -1,6 +1,7 @@
 package com.icegreen.greenmail.ndnproxy;
 
 import net.named_data.jndn.Face;
+import net.named_data.jndn.Interest;
 import net.named_data.jndn.Name;
 import net.named_data.jndn.security.KeyChain;
 import net.named_data.jndn.security.KeyType;
@@ -10,6 +11,7 @@ import net.named_data.jndn.security.identity.MemoryIdentityStorage;
 import net.named_data.jndn.security.identity.MemoryPrivateKeyStorage;
 import net.named_data.jndn.security.policy.SelfVerifyPolicyManager;
 import net.named_data.jndn.util.Blob;
+import net.named_data.jndn.util.SegmentFetcher;
 
 public class NDNMailSyncOneThread {
 

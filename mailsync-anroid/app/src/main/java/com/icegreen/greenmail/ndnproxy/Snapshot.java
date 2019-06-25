@@ -25,6 +25,8 @@ public class Snapshot implements Serializable {
   public HashMap<Long, MimeMessage> map;
   public HashMap<Long, Flags> flagMap;
   public int syncAmount;
+  public int initSize;
+  public int syncCheckpoint;
 
   public Snapshot(int a) {
     this.fetchResponse = new HashMap<>();

@@ -4,11 +4,10 @@ import android.content.Context;
 import android.util.Log;
 
 import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.Database;
-import com.couchbase.lite.DatabaseConfiguration;
 import com.google.common.io.BaseEncoding;
 import com.icegreen.greenmail.ExternalProxy;
 import com.icegreen.greenmail.ndnproxy.NdnFolder;
+import com.icegreen.greenmail.ndnproxy.Snapshot;
 import com.icegreen.greenmail.store.FolderException;
 import com.icegreen.greenmail.store.SimpleMessageAttributes;
 
@@ -26,8 +25,6 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 import edu.ua.cs.nrl.mailsync.EmailRepository;
-import edu.ua.cs.nrl.mailsync.database.NdnDBConnection;
-import edu.ua.cs.nrl.mailsync.database.NdnDBConnectionFactory;
 
 public class TranslateWorker {
 
@@ -37,15 +34,16 @@ public class TranslateWorker {
     public static void start(MimeMessage mimeMessage, Context context, long uid) throws
             FolderException, IOException, CouchbaseLiteException, MessagingException {
         // Initialize IMAP-to-NDN translators
+        EmailRepository emailRepository = new EmailRepository();
         NdnTranslator ndnTranslator = TranslatorFactory.getNdnTranslator("IMAP", context);
 
-        DatabaseConfiguration config = new DatabaseConfiguration(context);
-        Database database = new Database("Probe", config);
-
-        NdnDBConnection ndnDBConnection = NdnDBConnectionFactory.getDBConnection(
-                "couchbaseLite",
-                context
-        );
+//        DatabaseConfiguration config = new DatabaseConfiguration(context);
+//        Database database = new Database("Probe", config);
+//
+//        NdnDBConnection ndnDBConnection = NdnDBConnectionFactory.getDBConnection(
+//                "couchbaseLite",
+//                context
+//        );
 
         KeyChain keyChain = ExternalProxy.ndnMailSyncOneThread.keyChain_;
         Name certificateName = ExternalProxy.ndnMailSyncOneThread.certificateName_;
@@ -70,7 +68,7 @@ public class TranslateWorker {
         );
 
         ndnTranslator.saveData(attributeName, attributeData, "Attribute");
-        Log.d(TAG,"Attribute Saved " + attributeName);
+        Log.d(TAG, "Attribute Saved " + attributeName);
 
         /**
          * Deal with MailFolder
@@ -99,7 +97,20 @@ public class TranslateWorker {
         byte[] byteArray;
         System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^");
         System.out.println(" Ding Ding");
-        oos.writeObject(NdnFolder.getSnapshot());
+        Snapshot snapshot = NdnFolder.getSnapshot();
+        oos.writeObject(snapshot);
+        Log.d(TAG,"Exists" + snapshot.exists + "Recent Count" + snapshot.recent + "UidValidity" +snapshot.uidvalidity + "Uidnext"
+                +snapshot.uidnext + "\n" + "First unseen" + snapshot.unseen + "Size" +snapshot.size + "Last Size" + NdnFolder.lastSize
+                + "Sync number" + snapshot.syncAmount + "Sync Checkpoint" +snapshot.syncCheckpoint + "InitSize" +snapshot.initSize);
+        Log.d(TAG,"MessageUID List");
+        for(Long num: NdnFolder.messageUidList){
+            Log.d(TAG, " " + num);
+        }
+        Log.d(TAG,"MessageID List");
+        for(String string: NdnFolder.messgeID){
+            Log.d(TAG, " " + string);
+        }
+        System.out.println("messageUids size: : : : : " + NdnFolder.messageUidList.size());
         System.out.println(" Da Da");
         System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^");
         oos.flush();
@@ -242,10 +253,12 @@ public class TranslateWorker {
             Log.d(TAG, "Mimemessage Saved " + mimeMessageName);
 
         }
-        EmailRepository emailRepository = new EmailRepository();
-        emailRepository.removeIncompleteUids(uid);
-        emailRepository.incrementStoredMessages();
+
         System.out.println("Saved Email with UID: " + uid);
         emailRepository.getAllUids();
+        emailRepository.notifyStorageCompletion();
+        emailRepository.removeIncompleteUids(uid);
+        System.out.println("Translate Worker Ended");
+        return;
     }
 }

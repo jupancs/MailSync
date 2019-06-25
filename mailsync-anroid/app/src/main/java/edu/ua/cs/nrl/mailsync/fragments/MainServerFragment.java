@@ -22,6 +22,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.Unbinder;
+import edu.ua.cs.nrl.mailsync.EmailRepository;
 import edu.ua.cs.nrl.mailsync.EmailViewModel;
 import edu.ua.cs.nrl.mailsync.R;
 import edu.ua.cs.nrl.mailsync.R2;
@@ -200,10 +201,12 @@ public class MainServerFragment extends BaseFragment {
         Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
         serverStatus.setText("Running ...");
     }
-
+    //Deletes database and updates UI
     @OnClick(R2.id.btn_clear_database)
     public void setClearDatabaseButton() {
         EmailViewModel.clearDatabase();
+        EmailRepository emailRepository = new EmailRepository();
+        emailRepository.deleteAllStoredMessage();
     }
 
 //  @OnClick(R2.id.get_ip)
