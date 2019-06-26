@@ -93,17 +93,14 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
         IdRange[] idSet = parser.parseIdRange(request);
         FetchRequest fetch = parser.fetchRequest(request);
         parser.endLine(request);
-        //Instance of EmailRepository to update storedMessages in emailrepo
         emailRepository = new EmailRepository();
 
         if (useUids) {
             fetch.uid = true;
         }
         System.out.println("I am in Fetch Command!");
-        //EmailRepository.getIsIncomplete() keeps track of if there are any incomplete emails that need to be completed
-        //Only want to fetch when internet is available
         System.out.println("Check 3 IsIncomplete: " + EmailRepository.getIsIncomplete());
-        if (fetch.internalDate || (EmailRepository.getIsIncomplete()&& emailRepository.isNetworkAvailable())) {
+        if (fetch.internalDate || (EmailRepository.getIsIncomplete() && emailRepository.isNetworkAvailable())) {
             try {
                 Properties props = new Properties();
                 props.setProperty("mail.store.protocol", "imaps");
@@ -116,61 +113,25 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                 IMAPFolder imapFolder = (IMAPFolder) emailFolder;
                 NdnFolder.folder = imapFolder;
 
-                //If isIncomplete is true then fetch the uid of the email that needs to be completed and complete it
-                // and  EmailRepository.getIncompleteUids() gives the list of incomplete uids to complete
-
-
-//                if (fetch.internalDate) {
-//                    for (IdRange idRange : idSet) {
-//                        long uid = idRange.getLowVal();
-//                        System.out.println("Uid of range " + uid);
-//                        System.out.println(">>>> Fetching UID(1): " + uid);
-////                        NdnFolder.syncNumber++;
-//                        System.out.println("Sync number is "+ NdnFolder.syncNumber);
-//                        saveToNdnStorage(imapFolder, uid);
-//                    }
-//
-//
-//                }
-                //saves the email to ndnstorage and removes the email from
-                // the array list
-                if (fetch.internalDate||(EmailRepository.getIsIncomplete() && emailRepository.isNetworkAvailable())) {
+            /*
+                If isIncomplete is true or a new email arrived then fetch the uid of the email that needs to be completed then
+                fetch it and save it to NDN storage
+                Constraint: Network should be available
+             */
+                if (fetch.internalDate || (EmailRepository.getIsIncomplete() && emailRepository.isNetworkAvailable())) {
                     ArrayList<Long> incomplete = EmailRepository.getIncompleteUids();
-//                    while (!incomplete.isEmpty() && emailRepository.isNetworkAvailable()) {
-//                        long uid = incomplete.get(i);
-//                        System.out.println(">>>> Fetching UID: " + uid);
-////                        NdnFolder.syncNumber++;
-//                        saveToNdnStorage(imapFolder, uid);
-//                    }
                     int size = incomplete.size();
-//                    for(int i=0;i<size;i++){
-//                        if(emailRepository.isNetworkAvailable()){
-//                            if(!incomplete.isEmpty()){
-//                                if(i< incomplete.size()){
-//                                    long uid = incomplete.get(i);
-//                                    System.out.println(">>>> Fetching UID(2): " + uid);
-//                                    saveToNdnStorage(imapFolder, uid);
-//                                } else {
-//                                    i = 0;
-//                                }
-//                            } else {
-//                                break;
-//                            }
-//
-//
-//                        }
-//                    }
-                    while (!incomplete.isEmpty() && emailRepository.isNetworkAvailable() ){
-                        if(size==0){
+                    while (!incomplete.isEmpty() && emailRepository.isNetworkAvailable()) {
+                        if (size == 0) {
                             //Wait for updation of arraylist
                             size = incomplete.size();
 
                         }
-                        if(size>=1){
-                            long uid = incomplete.get(size-1);
+                        if (size >= 1) {
+                            long uid = incomplete.get(size - 1);
                             System.out.println(">>>> Fetching UID(2): " + uid);
-                            if(emailRepository.isNetworkAvailable()){
-//                                NdnFolder.syncNumber++;
+                            if (emailRepository.isNetworkAvailable()) {
+                                ;
                                 saveToNdnStorage(imapFolder, uid);
                                 size--;
                             }
@@ -180,8 +141,6 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                     }
                 }
 
-//                NdnFolder.messgeID.clear();
-//                NdnFolder.syncNumber = 0;
                 store.close();
 
             } catch (NoSuchProviderException e) {
@@ -256,35 +215,37 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
 
     }
 
-    //Saves to NDN storage and increments storedMessages in emailRepository for later use
-    //Invoking the exception means something occured while saving so the email uid
-    // is added to the arraylist to be completed later and the user is notified
-    // There is no need to delete the part which is saved of the email because
-    // while saving it can detect if there is a duplicate
+    /**
+     * Saves to NDN storage and increments storedMessages in emailRepository for later use
+     * syncNumber of the NdnFolder is also incremented which will be used in the laptop side
+     * Invoking the exception means something occurred while saving so the email uid
+     * is added to the Incomplete Array list to be completed later, reduce syncNumber
+     * and  and the user is notified. There is no need to delete the part which is saved of
+     * the email because while saving it can detect if there is a duplicate.
+     *
+     * @param folder IMAP Folder
+     * @param uid    UID of the email to save
+     */
     private void saveToNdnStorage(IMAPFolder folder, long uid) {
         try {
-            if(emailRepository.isNetworkAvailable()){
+            if (emailRepository.isNetworkAvailable()) {
                 emailRepository.incrementStoredMessages();
                 System.out.println("Stored Message Count" + emailRepository.getStoredMessages());
-                System.out.println("Sync Amount increased to " +  NdnFolder.syncNumber);
+                System.out.println("Sync Amount increased to " + NdnFolder.syncNumber);
                 NdnFolder.syncNumber++;
                 Message message = folder.getMessage(getMsn(uid, folder));
                 MimeMessage mimeMessage = (MimeMessage) message;
                 mimeMessage = new MimeMessage(mimeMessage);
                 NdnFolder.messgeID.add(mimeMessage.getMessageID());
-                EmailRepository.nextUid=uid+1;
+                EmailRepository.nextUid = uid + 1;
                 TranslateWorker.start(mimeMessage, ExternalProxy.context, uid);
                 NdnFolder.printMsgIds();
 
             }
 
-//            emailRepository.removeIncompleteUids(uid);
-//            emailRepository.incrementStoredMessages();
         } catch (MessagingException e) {
             e.printStackTrace();
-            //If it was not stored properly then it cannot be sycned so reduce the sync number and removed
-            // the messageID that was added initially
-            if(NdnFolder.syncNumber!=0){
+            if (NdnFolder.syncNumber != 0) {
                 NdnFolder.syncNumber--;
             }
             emailRepository.decrementStoredMessages();
@@ -293,7 +254,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
 
         } catch (FolderException e) {
             e.printStackTrace();
-            if(NdnFolder.syncNumber!=0){
+            if (NdnFolder.syncNumber != 0) {
                 NdnFolder.syncNumber--;
             }
             emailRepository.decrementStoredMessages();
@@ -302,7 +263,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
 
         } catch (CouchbaseLiteException e) {
             e.printStackTrace();
-            if(NdnFolder.syncNumber!=0){
+            if (NdnFolder.syncNumber != 0) {
                 NdnFolder.syncNumber--;
             }
             emailRepository.decrementStoredMessages();
@@ -311,7 +272,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
 
         } catch (IOException e) {
             e.printStackTrace();
-            if(NdnFolder.syncNumber!=0){
+            if (NdnFolder.syncNumber != 0) {
                 NdnFolder.syncNumber--;
             }
             emailRepository.decrementStoredMessages();

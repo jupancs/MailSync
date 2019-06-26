@@ -11,6 +11,9 @@ public class Snapshot implements Serializable {
   public int recent;
   public String flags;
   public long uidvalidity;
+  /**
+   * UID of the next newest email
+   */
   public long uidnext;
   public int unseen;
   public String complete;
@@ -18,13 +21,31 @@ public class Snapshot implements Serializable {
   public int fetchResponseLastMsn;
   public String fetchResponseLastMsnData;
   public int size = 0;
+  /**
+   * Maintains a list of UIDs of all the emails in the mailbox
+   */
   public long[] messageUids;
   public long msn;
+  /**
+   * Maintains a list of IDs for each email that was stored on
+   * the mobile side
+   */
   public List<String> messageID;
   public HashMap<Long, MimeMessage> map;
   public HashMap<Long, Flags> flagMap;
+  /**
+   * Keeps track of the number of emails that can be synced
+   */
   public int syncAmount;
-  public int initSize=0;
+  /**
+   * The initial size of the mailbox before all the syncing of emails
+   * Used to find the correct messageUID for each email on the laptop side
+   */
+  public int initSize;
+  /**
+   * Tracks the position of where the last sync ended
+   * Used to find the correct messageID for each email on the laptop side
+   */
   public int syncCheckpoint;
 
   public Snapshot(int a) {

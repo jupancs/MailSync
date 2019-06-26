@@ -29,7 +29,7 @@ public class NdnFolder {
     public static List<Long> messageUidList = new ArrayList<>();
     public static int sizeDiff = 0;
     public static int lastSize;
-    public static int syncCheckpoint; //Adds a point from which syncing can be continued
+    public static int syncCheckpoint;
     public static HashMap<Long, Flags> flagsMap = new HashMap<>();
 
     public static int updateSize() {
@@ -47,7 +47,6 @@ public class NdnFolder {
         snapshot.map = new HashMap<>();
         snapshot.flags = MessageFlags.format(folder.getPermanentFlags());
         System.out.println("$$$$$$$$$$$$$$$$ check 1 $$$$$$$$$$$$$$$$");
-        //The number of messages in the laptop mailbox is the number of messages in the mobile mailbox - the number of new messages that need to be synced
         snapshot.exists = folder.getMessageCount()- EmailRepository.getIncompleteUids().size()+1;
         System.out.println("$$$$$$$$$$$$$$$$ check 2 $$$$$$$$$$$$$$$$");
         snapshot.recent = getRecentCount(false);
@@ -59,17 +58,14 @@ public class NdnFolder {
         snapshot.unseen = getFirstUnseen();
         System.out.println("$$$$$$$$$$$$$$$$ check 6 $$$$$$$$$$$$$$$$");
         snapshot.complete = "READ-ONLY";
-        //The size is equal to the above comment
         snapshot.size = folder.getMessageCount()- EmailRepository.getIncompleteUids().size()+1;
         snapshot.flagMap = flagsMap;
         System.out.println("$$$$$$$$$$$$$$$$ check 7 $$$$$$$$$$$$$$$$");
         snapshot.messageUids = Longs.toArray(messageUidList);
         System.out.println("messageUids size: : : : : " + messageUidList.size());
-//    snapshot.messageUids = getMessageUids();
         System.out.println("$$$$$$$$$$$$$$$$ check 8 $$$$$$$$$$$$$$$$");
         snapshot.messageID = messgeID;
         snapshot.syncAmount = syncNumber;
-        //Initial size is the size of laptop mailbox without the new message being synced
         snapshot.initSize=folder.getMessageCount()-EmailRepository.maxEmailsStored;
         snapshot.syncCheckpoint=NdnFolder.syncCheckpoint;
         return snapshot;
