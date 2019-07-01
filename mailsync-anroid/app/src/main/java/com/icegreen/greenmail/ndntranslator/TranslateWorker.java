@@ -31,7 +31,7 @@ public class TranslateWorker {
     public static String probeSize;
     public final static String TAG = "TranslateWorker";
 
-    public static void start(MimeMessage mimeMessage, Context context, long uid) throws
+    public static void start(MimeMessage mimeMessage, Context context, long uid, String mimeMessageID) throws
             FolderException, IOException, CouchbaseLiteException, MessagingException {
         // Initialize IMAP-to-NDN translators
         EmailRepository emailRepository = new EmailRepository();
@@ -58,8 +58,9 @@ public class TranslateWorker {
                 ExternalProxy.userEmail,
                 "inbox",
                 "1",
-                String.valueOf(mimeMessage.getMessageID())
+                String.valueOf(mimeMessageID)
         );
+        System.out.println("Attribute Name " + attributeName);
         Name attributeNdnName = new Name(attributeName);
         attributeName = attributeNdnName.toUri();
 
@@ -101,7 +102,7 @@ public class TranslateWorker {
         oos.writeObject(snapshot);
         Log.d(TAG,"Exists" + snapshot.exists + "Recent Count" + snapshot.recent + "UidValidity" +snapshot.uidvalidity + "Uidnext"
                 +snapshot.uidnext + "\n" + "First unseen" + snapshot.unseen + "Size" +snapshot.size + "Last Size" + NdnFolder.lastSize
-                + "Sync number" + snapshot.syncAmount + "Sync Checkpoint" +snapshot.syncCheckpoint + "InitSize" +snapshot.initSize);
+                + "Sync number" + snapshot.syncAmount + "Sync Checkpoint" +snapshot.syncCheckpoint + "InitSize" +snapshot.initSize + "MessageID" +  mimeMessageID);
         Log.d(TAG,"MessageUID List");
         for(Long num: NdnFolder.messageUidList){
             Log.d(TAG, " " + num);
@@ -166,13 +167,13 @@ public class TranslateWorker {
         StringBuilder nameBuilder = new StringBuilder();
         nameBuilder.append("/").append("mailSync").append("/").append(ExternalProxy.userEmail).append("/")
                 .append("v1").append("/inbox").append("/").append("1").append("/MimeMessage")
-                .append("/").append(String.valueOf(mimeMessage.getMessageID()));
+                .append("/").append(String.valueOf(mimeMessageID));
 
 
         String[] mailFolderChunks = new String[mailFolderLen / 7000 + 1];
         for (int i = 0; i < mailFolderLen / 7000 + 1; i++) {
             String mailFolderName = "/mailSync/" + ExternalProxy.userEmail + "/v" + i + "/inbox/1/MailFolder/"
-                    + String.valueOf(mimeMessage.getMessageID());
+                    + String.valueOf(mimeMessageID);
             Name mailFolderNdnName = new Name(mailFolderName);
             mailFolderName = mailFolderNdnName.toUri();
             if (i == mailFolderChunkSize - 1) {
@@ -208,7 +209,7 @@ public class TranslateWorker {
                 ExternalProxy.userEmail,
                 "inbox",
                 "1",
-                String.valueOf(mimeMessage.getMessageID())
+                String.valueOf(mimeMessageID)
         );
 
         Name mimeMessageNdnName = new Name(mimeMessageName);

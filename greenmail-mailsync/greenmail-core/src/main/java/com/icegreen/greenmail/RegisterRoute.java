@@ -206,6 +206,7 @@ public class RegisterRoute {
               new SegmentFetcher.OnComplete() {
                 public void onComplete(Blob content) {
                   processFaceStatus(content, prefix, uri, face, enabled);
+                  System.out.println("Successfull in processFaceStatus");
                 }},
               new SegmentFetcher.OnError() {
                 public void onError(SegmentFetcher.ErrorCode errorCode, String message) {
@@ -245,9 +246,11 @@ public class RegisterRoute {
    final boolean[] enabled)
   {
     try {
+      System.out.println("In here 0");
       if (encodedFaceStatus.size() == 0) {
         // No result, so we need to tell NFD to create the face.
         // Encode the ControlParameters.
+        System.out.println("In here 1");
         ControlParametersMessage.Builder builder = ControlParametersMessage.newBuilder();
         builder.getControlParametersBuilder().setUri(uri);
         Blob encodedControlParameters = ProtobufTlv.encode(builder.build());
@@ -255,7 +258,7 @@ public class RegisterRoute {
         Interest interest = new Interest(new Name("/localhost/nfd/faces/create"));
         interest.getName().append(encodedControlParameters);
         interest.setInterestLifetimeMilliseconds(10000);
-
+        System.out.println("In here");
         // Sign and express the interest.
         face.makeCommandInterest(interest);
         face.expressInterest
@@ -263,6 +266,7 @@ public class RegisterRoute {
                 new OnData() {
                   public void onData(Interest interest, Data data) {
                     processCreateFaceResponse(data.getContent(), prefix, face, enabled);
+                    System.out.println("ProcessFaceStatus is working + Data is " + data.getContent());
                   }},
                 new OnTimeout() {
                   public void onTimeout(Interest interest) {
@@ -271,6 +275,7 @@ public class RegisterRoute {
                   }});
       }
       else {
+        System.out.println("In here 2");
         FaceStatusMessage.Builder decodedFaceStatus = FaceStatusMessage.newBuilder();
         ProtobufTlv.decode(decodedFaceStatus, encodedFaceStatus);
 
@@ -281,7 +286,7 @@ public class RegisterRoute {
       }
     }
     catch (Exception e) {
-      System.out.println("exception: " + e.getMessage());
+      System.out.println("exception:register route " + e.getMessage());
       enabled[0] = false;
     }
   }
@@ -301,13 +306,20 @@ public class RegisterRoute {
   (Blob encodedControlResponse, Name prefix, Face face, final boolean[] enabled)
   {
     try {
+      System.out.println("Here 4 EncodedCR" + encodedControlResponse + "prefix" + prefix);
+
       ControlParametersResponseMessage.Builder decodedControlResponse =
           ControlParametersResponseMessage.newBuilder();
+          System.out.println("Here 6 + decodedControlResponse " + decodedControlResponse);
+
       ProtobufTlv.decode(decodedControlResponse, encodedControlResponse);
+      System.out.println("Decoded Response is" + decodedControlResponse + "EncodedControlResponse is " + encodedControlResponse);
       ControlParametersResponse controlResponse =
           decodedControlResponse.getControlResponse();
+          System.out.println("Here 7 + Control Response is " + controlResponse);
 
       final int lowestErrorCode = 400;
+      System.out.println("Here 5");
       if (controlResponse.getStatusCode() >= lowestErrorCode) {
         System.out.println
             ("Face create command got error, code " + controlResponse.getStatusCode() +
@@ -328,7 +340,7 @@ public class RegisterRoute {
       registerRoute(prefix, faceId, face, enabled);
     }
     catch (Exception e) {
-      System.out.println("exception: " + e.getMessage());
+      System.out.println("exception: createFaceResponse " + e.getMessage());
       enabled[0] = false;
     }
   }
@@ -365,7 +377,7 @@ public class RegisterRoute {
       Interest interest = new Interest(new Name("/localhost/nfd/rib/register"));
       interest.getName().append(encodedControlParameters);
       interest.setInterestLifetimeMilliseconds(10000);
-
+      System.out.println("Registering Route");
       // Sign and express the interest.
       face.makeCommandInterest(interest);
       face.expressInterest
@@ -374,6 +386,7 @@ public class RegisterRoute {
                 public void onData(Interest interest, Data data) {
                   enabled[0] = false;
                   processRegisterResponse(data.getContent());
+                  System.out.println("ProcessingRegisterResponse");
                 }},
               new OnTimeout() {
                 public void onTimeout(Interest interest) {
