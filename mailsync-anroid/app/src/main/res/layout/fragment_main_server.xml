@@ -80,29 +80,44 @@
     </RelativeLayout>
 
     <!--<LinearLayout-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="wrap_content">-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="wrap_content">-->
 
-        <!--<TextView-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:text="Internet"-->
-            <!--android:layout_marginLeft="10dp"/>-->
+    <!--<TextView-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:text="Internet"-->
+    <!--android:layout_marginLeft="10dp"/>-->
 
-        <!--<Switch-->
-            <!--android:id="@+id/main_server_switch"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:checked="false"-->
-            <!--android:layout_marginLeft="20dp"-->
-            <!--android:layout_marginRight="20dp"/>-->
+    <!--<Switch-->
+    <!--android:id="@+id/main_server_switch"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:checked="false"-->
+    <!--android:layout_marginLeft="20dp"-->
+    <!--android:layout_marginRight="20dp"/>-->
 
-        <!--<TextView-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:text="NDN"/>-->
+    <!--<TextView-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:text="NDN"/>-->
 
     <!--</LinearLayout>-->
+
+    <Button
+        android:id="@+id/run_nfd"
+        android:layout_width="150dp"
+        android:layout_height="40dp"
+        android:background="@drawable/fetch_background"
+        android:layout_gravity="center"
+        android:layout_marginTop="80dp"
+        android:layout_marginLeft="50dp"
+        android:layout_marginRight="50dp"
+        android:textSize="17sp"
+        android:text="Run NFD"
+        android:textStyle="bold"
+        android:textColor="#ffffff"
+        />
 
     <Button
         android:id="@+id/run_server"
@@ -114,25 +129,25 @@
         android:layout_marginLeft="50dp"
         android:layout_marginRight="50dp"
         android:textSize="17sp"
-        android:text="Run"
+        android:text="Run Server"
         android:textStyle="bold"
         android:textColor="#ffffff"
         />
 
     <!--<Button-->
-        <!--android:id="@+id/get_ip"-->
-        <!--android:layout_width="150dp"-->
-        <!--android:layout_height="40dp"-->
-        <!--android:background="@drawable/fetch_background"-->
-        <!--android:layout_gravity="center"-->
-        <!--android:layout_marginTop="30dp"-->
-        <!--android:layout_marginLeft="50dp"-->
-        <!--android:layout_marginRight="50dp"-->
-        <!--android:textSize="17sp"-->
-        <!--android:text="Create Route"-->
-        <!--android:textStyle="bold"-->
-        <!--android:textColor="#ffffff"-->
-        <!--/>-->
+    <!--android:id="@+id/get_ip"-->
+    <!--android:layout_width="150dp"-->
+    <!--android:layout_height="40dp"-->
+    <!--android:background="@drawable/fetch_background"-->
+    <!--android:layout_gravity="center"-->
+    <!--android:layout_marginTop="30dp"-->
+    <!--android:layout_marginLeft="50dp"-->
+    <!--android:layout_marginRight="50dp"-->
+    <!--android:textSize="17sp"-->
+    <!--android:text="Create Route"-->
+    <!--android:textStyle="bold"-->
+    <!--android:textColor="#ffffff"-->
+    <!--/>-->
 
     <Button
         android:id="@+id/btn_clear_database"
