@@ -69,10 +69,7 @@ public class LoginFragment extends BaseFragment {
     password = userPasswordEditText.getText().toString();
     emailViewModel.getEmail().setValue(email);
     emailViewModel.getPassword().setValue(password);
-//    Intent intent = new Intent(getActivity(), MainServerActivity.class);
-//    intent.putExtra("EMAIL_ACCOUNT", email);
-//    intent.putExtra("EMAIL_PASSWORD", password);
-//    startActivity(intent);
+
     FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
     fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer,new MainServerFragment());
     fragmentTransaction.commit();

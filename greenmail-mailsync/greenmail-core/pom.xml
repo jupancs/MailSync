@@ -71,7 +71,7 @@
     <dependency>
     	<groupId>net.named-data</groupId>
     	<artifactId>jndn</artifactId>
-    	<version>0.22</version>
+    	<version>0.16</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>

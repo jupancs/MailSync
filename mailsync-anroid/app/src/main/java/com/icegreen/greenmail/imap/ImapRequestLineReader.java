@@ -6,6 +6,8 @@
  */
 package com.icegreen.greenmail.imap;
 
+import com.icegreen.greenmail.ndnproxy.NdnFolder;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,10 +101,16 @@ public class ImapRequestLineReader {
         //IMAP Line received : <FETCH 178,177 (UID FLAGS INTERNALDATE RFC822.SIZE BODY.PEEK[HEADER.FIELDS (from reply-to to cc bcc content-type date message-id X-Android-Message-ID subject in-reply-to references)])\r\n>
         //The above line is a normal fetch command for new emails which will help us get the uids of the new emails
         //Gives the pos of the uids in the IMAP fetch command
+        //COPY 456 "[Gmail]/Trash"\r\n
         int pos= buf.indexOf(" (UID FLAGS INTERNALDATE RFC822.SIZE BODY.PEEK[HEADER.FIELDS (from reply-to to cc bcc content-type date message-id X-Android-Message-ID subject in-reply-to references)])");
         if(pos!=-1){
             System.out.println("New uids"+buf.substring(5,pos));
-            extractUids(buf.substring(6,pos));
+            extractUids(buf.substring(6,pos),"fetch");
+        }
+        int delpos = buf.indexOf(" \"[Gmail]/Trash\"");
+        if(delpos > 4){
+            System.out.println("Delete uids"+buf.substring(5,delpos));
+            extractUids(buf.substring(5,delpos),"delete");
         }
         System.out.println("Check 1 Before:");
         emailRepository.getAllUids();
@@ -111,26 +119,45 @@ public class ImapRequestLineReader {
         buf.delete(0, buf.length());
     }
 
-    //Used to extract uids from the list of uids and it added to the InCompleteUIds list
-    //Also helps identify the max amount of emails that can be stored signified by the size of
-    // dig array
-    public void extractUids(String a) {
+    /**
+     * Used to extract uids from the list of uids and it added to the InCompleteUIds list
+     * Also helps identify the max amount of emails that can be stored signified by the size of
+     * dig array
+     * After fetching this function either adds it as needed to stored uids if the function is
+     * fetch or else deletes the specified uid from the list if the function specified is delete
+     * @param a String that is passed that contains the uid
+     * @param function function that needs to be performed either fetch or delete
+     */
+    public void extractUids(String a, String function) {
         String s = new String (a);
+        if(function == "fetch"){ String[]dig=s.split(",");
+            System.out.println("This is the string to extract uid from " + a);
+            int numOfEmails=0;
+            for(String i: dig){
+                numOfEmails++;
+                if(android.text.TextUtils.isDigitsOnly(i)){
+                    Long uid = Long.parseLong(i);
+                    emailRepository.addIncompleteUids(uid);
+                    System.out.println("This uid is added :" + uid);
+                }
+            }
 
-        String[]dig=s.split(",");
-        System.out.println("This is the string to extract uid from " + a);
-        int numOfEmails=0;
-        for(String i: dig){
-            numOfEmails++;
-            if(android.text.TextUtils.isDigitsOnly(i)){
-                Long uid = Long.parseLong(i);
-                emailRepository.addIncompleteUids(uid);
-                System.out.println("This uid is added :" + uid);
+            EmailRepository.maxEmailsStored +=numOfEmails;
+        } else if (function == "delete") {
+            System.out.println("In the process of deleting " + a);
+            if(android.text.TextUtils.isDigitsOnly(a)){
+                Long uid = Long.parseLong(a);
+                NdnFolder.deleteUID(uid);
+                if(NdnFolder.lastSize>0){
+                    NdnFolder.lastSize--;
+                }
+
             }
         }
+
         System.out.println("Check 2 After:");
         emailRepository.getAllUids();
-        EmailRepository.maxEmailsStored +=numOfEmails;
+
 
     }
 

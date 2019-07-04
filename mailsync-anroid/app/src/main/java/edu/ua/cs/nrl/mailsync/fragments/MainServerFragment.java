@@ -111,6 +111,15 @@ public class MainServerFragment extends BaseFragment {
     }
 
     /**
+     * Updates the NDNfolder messageuidlist and flags hashmap with the stored uidlist and hashmap
+     */
+    @Override
+    public void onResume() {
+        EmailRepository.updateMailboxUids();
+        super.onResume();
+    }
+
+    /**
      * Starts a thread that switches from ndnmode to normal mode depending on if network is available
      */
     public void runServer(){
