@@ -198,15 +198,17 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
 //              .where(Expression.property("name").equalTo(Expression.string(name.toUri())));
 
                     ResultSet mailFolderResult = mailFolderQuery.execute();
-                    //The progressbar displaying the syncing has to have a max which will be the number of stored messages in the db
-                    //Only those messages can be synced. EmailRepository has the number of stored messages which we get using getStoredMessages
-                    //For each result update progress is called which increases the progress of the progress bar and gets the result
-                    // to be sent
+                    /*
+                    The progressbar displaying the syncing has to have a max which will be the number of stored messages in the db
+                    Only those messages can be synced. EmailRepository has the number of stored messages which we get using getStoredMessages
+                    For each result update progress is called which increases the progress of the progress bar and gets the result
+                    to be sent
+                     */
                     setMax(emailRepository.getStoredMessages());
                     for (Result result : mailFolderResult) {
-                        System.out.println("*(*(*(*(*(*(*(*(*((*(");
+//                        System.out.println("*(*(*(*(*(*(*(*(*((*(");
                         contentByte = result.getBlob("content").getContent();
-                        System.out.println("Content Byte is " + contentByte);
+//                        System.out.println("Content Byte is " + contentByte);
                     }
 
 //          List<Result> list= mailFolderResult.allResults();
@@ -225,31 +227,19 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
                     for (Result result : attributeResult) {
                         contentByte = result.getBlob("content").getContent();
                     }
+                    /*
+                    For each email there is one attribute and this being sent is used to signify that the syncing process
+                    is occurring. Each time an email is synced the syncNumber is decremented and syncCheckpoint is incremented
+                     */
                     i++;
                     toast(context, "MailSync will sync" + i + "Emails");
                     System.out.println("Sync number is " + NdnFolder.syncNumber + "i = " + i + EmailRepository.maxEmailsStored + "SyncCheckpoint" + NdnFolder.syncCheckpoint);
-                    if(NdnFolder.syncNumber>=1){
+                    if (NdnFolder.syncNumber >= 1) {
                         NdnFolder.syncNumber--;
+                        System.out.println("Sync Amount decreased to " + NdnFolder.syncNumber);
                         NdnFolder.syncCheckpoint++;
                     }
 
-                    //if i==maxEmailsStored that means all the emails were synced and the sync number can be reset to 0 and the messageID list can cleared
-                    // As both are already sent as mailfolder and were used correctly
-                    //Checkpoint is incremented by sync amount each time the mail folder is synced
-                    // And max emails stored is decremented
-//                    if (i == EmailRepository.maxEmailsStored || i == NdnFolder.syncNumber) {
-//                        if(NdnFolder.syncNumber>=1){
-//                            NdnFolder.syncCheckpoint+=NdnFolder.syncNumber;
-//                        }
-//
-////                        updateProgress(0);
-//                        System.out.println("In here !1!1!1" + "");
-//                        EmailRepository.maxEmailsStored = EmailRepository.maxEmailsStored - NdnFolder.syncNumber;
-//                        NdnFolder.syncNumber = 0;
-//                        EmailRepository emailRepository = new EmailRepository();
-//                        emailRepository.updateText(0 + "/" + EmailRepository.maxEmailsStored);
-//                        setMax(EmailRepository.maxEmailsStored);
-//                    }
                 } catch (CouchbaseLiteException e) {
                     e.printStackTrace();
                 }
@@ -314,7 +304,14 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
 
     }
 
-    //Gives Toast about syncing set amount of messages...to be removed soon
+    /**
+     * Gives Toast about syncing set amount of messages
+     *
+     * @param context View
+     * @param text    Toast Message
+     * @TODO Should be moved to EmailRepository or EmailViewModel
+     */
+
     public void toast(final Context context, final String text) {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
@@ -325,7 +322,12 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
         });
     }
 
-    //Sets a max to the progressbar
+
+    /**
+     * Sets a max to the progressbar
+     *
+     * @param max Maximum progress integer
+     */
     public void setMax(final int max) {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
@@ -336,8 +338,13 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
         });
     }
 
-    //updates progress of the progressbar and since many threads could be running
-    //a lock mechanism is added using synchronized
+
+    /**
+     * updates progress of the progressbar and since many threads could be running
+     * a lock mechanism is added using synchronized
+     *
+     * @param progress currentProgress
+     */
     synchronized public void updateProgress(final int progress) {
         System.out.println("Working in Here mate");
         Handler handler = new Handler(Looper.getMainLooper());

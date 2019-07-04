@@ -9,7 +9,6 @@ import android.os.Looper;
 import android.os.StrictMode;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,38 +33,47 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import butterknife.Unbinder;
 import edu.ua.cs.nrl.mailsync.database.NdnDBConnection;
 import edu.ua.cs.nrl.mailsync.database.NdnDBConnectionFactory;
 import edu.ua.cs.nrl.mailsync.relayer.Relayer;
 import edu.ua.cs.nrl.mailsync.utils.NfdcHelper;
 
+/**
+ * EmailRepository connects the EmailViewmodel to the database
+ * This is part of the architecture recommended by Android
+ * It centralizes all the access to the database and deals with the initialization of threads and NDN Proxies
+ * It also contains variables that keep track of the maxEmails that can be stored and emails that are stored
+ * so that it can be displayed by the fragment
+ * Majority of the functioning of the app is started and controlled in this class
+ *
+ * @TODO Transfer the updation of textview and progress bar to the ViewModel
+ * @see <a href="https://developer.android.com/jetpack/docs/guide">https://developer.android.com/jetpack/docs/guide</a>
+ */
 public class EmailRepository {
-    private int mailboxSize;
+    private static final String TAG = "EmailRepo";
+    /**
+     * Keeps track of the uid of next mail to follow the current one
+     */
+    public static long nextUid;
+    public static boolean isIncomplete = false;
+    /**
+     * Keeps track of max amount of emails that can be stored when refreshed
+     */
+    public static int maxEmailsStored = 0;
+    private static Context context;
+    private static View view;
+    private static int storedMessages = 0;
+    private static ArrayList<Long> incompleteUids = new ArrayList<>();
     boolean hasInternetBefore = false;
-    private Unbinder unbinder;
+    TextView textView;
     private String userEmail;
     private String userPassword;
     private boolean isFirstTime = true;
     private ScheduledExecutorService scheduleTaskExecutor;
-    private boolean ndnService = false;
     private NdnDBConnection ndnDBConnection;
     private boolean lastInternetState = true;
     private Relayer relayer;
-    private int lastMailboxSize;
-    private static Context context;
     private MutableLiveData<Boolean> networkStatus;
-    private static View view;
-    private static int storedMessages = 0;
-    private static final String TAG = "EmailRepo";
-    TextView textView;
-    public static long nextUid; //Keeps track of the uid of next mail to follow the current one
-    private static Button runServerButton;
-    public static boolean stop = false;
-    private static ArrayList<Long> incompleteUids = new ArrayList<>();
-    public static boolean isIncomplete = false;
-    //Keeps track of max amount of emails that can be stored when refreshed
-    public static int maxEmailsStored = 0;
 
     public EmailRepository(Context context, String userEmail, String userPassword) {
         this.context = context;
@@ -77,7 +85,30 @@ public class EmailRepository {
 
     }
 
-    //Adds uids of emails that are not completed
+
+    /**
+     * Returns a boolean that returns true if there are any incomplete emails
+     *
+     * @return boolean isIncomplete
+     */
+    public static boolean getIsIncomplete() {
+        return isIncomplete;
+    }
+
+    /**
+     * Returns a reference to the Array list containing UIDs of emails not fetched properly
+     *
+     * @return Arraylist of IncompleteUids
+     */
+    public static ArrayList<Long> getIncompleteUids() {
+        return incompleteUids;
+    }
+
+    /**
+     * Adds uids of emails that are not completed to the arraylist and sets the boolean isIncomplete to true
+     *
+     * @param uid the UID of the email that needs to be fetched
+     */
     synchronized public void addIncompleteUids(long uid) {
         if (incompleteUids.indexOf(uid) == -1) {
             incompleteUids.add(uid);
@@ -87,7 +118,10 @@ public class EmailRepository {
         isIncomplete = true;
     }
 
-    //Gets all the uids in the array
+    /**
+     * Prints all the uids in the Array containing the incomplete uids
+     * needed to be fetched
+     */
     public void getAllUids() {
         if (incompleteUids == null) {
             System.out.println("Array List is empty");
@@ -101,22 +135,21 @@ public class EmailRepository {
 
     }
 
-    //Notifies user if an email is not stored completely
+    /**
+     * Displays a toast message notifying the user that the email was not stored properly
+     *
+     * @param uid a long number identifying the uid of the email that is not completed
+     */
     public void notifyIncompleteEmail(long uid) {
         toast(context, "The email of " + uid + " was not stored correctly. Please try again later");
     }
 
-    //Returns a boolean that returns true if there are any incomplete emails
-    public static boolean getIsIncomplete() {
-        return isIncomplete;
-    }
-
-    //Returns an array of incomplete email uids
-    public static ArrayList<Long> getIncompleteUids() {
-        return incompleteUids;
-    }
-
-    //Removes uid from the list of uids
+    /**
+     * Removes uid from the Array list of incomplete uids and if
+     * the Array list is empty then sets isIncomplete to false
+     *
+     * @param uid UID of the email that was fetched
+     */
     synchronized public void removeIncompleteUids(long uid) {
         incompleteUids.remove(uid);
         System.out.println("Removed uid " + uid);
@@ -125,7 +158,11 @@ public class EmailRepository {
         }
     }
 
-    //Checks if network is available
+    /**
+     * Checks if network is available
+     *
+     * @return true if network is available or else false
+     */
     public boolean isNetworkAvailable() {
         ConnectivityManager connectivityManager
                 = (ConnectivityManager) context
@@ -134,7 +171,13 @@ public class EmailRepository {
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
-    //Initializes the DB, thread policy, External policy and view
+
+    /**
+     * Initializes the DB, thread policy, External policy and view
+     *
+     * @param view the fragment
+     */
+    //
     public void init(View view) {
         initializeDB();
         initializeThreadPolicy();
@@ -147,15 +190,18 @@ public class EmailRepository {
         }
     }
 
-    //Increments stored messages number and checks if the view is null if not then
-    // the text view showing the stored messages is incremented
+    /**
+     * Increments the stored messages number
+     */
     synchronized public void incrementStoredMessages() {
-
         storedMessages++;
-
     }
 
-    synchronized public void notifyStorageCompletion(){
+    /**
+     * Updates the textview with the new stored messages
+     * Is in the format storedMessages /  maxEmailsStored
+     */
+    synchronized public void notifyStorageCompletion() {
         if (view == null) {
             Log.d(TAG, "View is null inside increment");
         }
@@ -163,7 +209,10 @@ public class EmailRepository {
         textView = view.findViewById(R.id.stored_emails);
         updateText(Integer.toString(storedMessages) + "/" + maxEmailsStored);
     }
-    //Decrements stored messages
+
+    /**
+     * Decrements stored messages
+     */
     synchronized public void decrementStoredMessages() {
         if (view == null) {
             Log.d(TAG, "View is null inside increment");
@@ -173,7 +222,12 @@ public class EmailRepository {
         updateText(Integer.toString(storedMessages) + "/" + maxEmailsStored);
     }
 
-    //Updates the Textview to the new storedMessages value
+
+    /**
+     * Updates the Textview to the new storedMessages value
+     *
+     * @param text the String to display
+     */
     synchronized public void updateText(String text) {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
@@ -184,24 +238,28 @@ public class EmailRepository {
             }
         });
     }
-    //Updates progress bar and email stored in the UI
-    synchronized public void deleteAllStoredMessage(){
+
+    /**
+     * Sets storedMessages to 0 and updates textview and progressbar
+     */
+    synchronized public void deleteAllStoredMessage() {
         if (view == null) {
             Log.d(TAG, "View is null inside increment");
         }
-        storedMessages=0;
+        storedMessages = 0;
         textView = view.findViewById(R.id.stored_emails);
         updateText(Integer.toString(storedMessages));
         updateProgress(0);
     }
 
-    //returns stored messages
+
+    /**
+     * returns stored messages
+     *
+     * @return storedMessages
+     */
     public int getStoredMessages() {
         return storedMessages;
-    }
-
-    public void setStoredMessages(int value) {
-        storedMessages = value;
     }
 
     private void initializeExternalProxy() {
@@ -489,10 +547,13 @@ public class EmailRepository {
         ndnMailExecution();
     }
 
+    /**
+     * Clears Database and sets sync number and sync checkpoint to 0
+     */
     public void clearDatabase() {
         try {
-            NdnFolder.syncNumber=0;
-            NdnFolder.syncCheckpoint=0;
+            NdnFolder.syncNumber = 0;
+            NdnFolder.syncCheckpoint = 0;
             ImapToNdnTranslator.stopDB();
             new Database("Attribute", ndnDBConnection.getConfig()).close();
             new Database("MimeMessage", ndnDBConnection.getConfig()).close();
@@ -500,13 +561,17 @@ public class EmailRepository {
             new Database("MailFolder", ndnDBConnection.getConfig()).close();
 
 
-
         } catch (CouchbaseLiteException e) {
             e.printStackTrace();
         }
     }
 
-    //Gives Toast about syncing set amount of messages...to be removed soon
+    /**
+     * A general function to display toast message for a short length given the context and the message
+     *
+     * @param context Fragment Context
+     * @param text    Message to dsiplay
+     */
     public void toast(final Context context, final String text) {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
@@ -516,6 +581,12 @@ public class EmailRepository {
             }
         });
     }
+
+    /**
+     * Updates progress bar with the given progress
+     *
+     * @param progress integer signifying the progress
+     */
     synchronized public void updateProgress(final int progress) {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {

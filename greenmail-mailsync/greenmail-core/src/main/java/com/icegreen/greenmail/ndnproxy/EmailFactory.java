@@ -29,7 +29,7 @@ public class EmailFactory {
     ExternalProxy.setNDNResult(false);
     waitForReuslt();
     String contentString = ExternalProxy.getContentString();
-    System.out.println("Content string: " + contentString);
+    // System.out.println("Content string: " + contentString);
     int mailFolderSize = Integer.valueOf(contentString);
 
 
@@ -69,11 +69,11 @@ public class EmailFactory {
     if (!contentString.equals("")) {
       System.out.println(">>> MailFolder content: " + value);
       byte[] decodeByteArray = BaseEncoding.base64().decode(value);
-      System.out.println(">>> Decoded Value " + decodeByteArray.toString());
+      // System.out.println(">>> Decoded Value " + decodeByteArray.toString());
       ByteArrayInputStream bais = new ByteArrayInputStream(decodeByteArray);
       ois = new ObjectInputStream(bais);
       Snapshot snapshot = (Snapshot) ois.readObject();
-      System.out.println(">>> SnapShot: " + snapshot);
+      // System.out.println(">>> SnapShot: " + snapshot);
       NDNMailSyncConsumerProducer.mailbox = snapshot;
 
       /* ------------------------- Attribute ------------------------- */
@@ -85,8 +85,14 @@ public class EmailFactory {
       System.out.println(">>>startPos: " + snapshot.syncCheckpoint);
       int initSize = snapshot.initSize;
       int startPos = snapshot.syncCheckpoint;
-      //The emails should be synced from the startpoint which is the checkpoint or the position of the emails
-      //synced last time
+      /*
+        The emailUIds are stored in increasing order that is UID 1,2,3 .... and every single email will have its UID stored
+        in messageUIDs Array List. MessageID will contain the list of IDs of only emails that were stored in the mobile side.
+        initSize is used to track the initial size of laptop side mailbox and so from that position syncing can occur for 
+        messageUIDs. startPos is used to iterate for both the messageUID arraylist and messageIDs Arraylist as it tracks
+        how many of the stored emails are synced. It syncs from the startPos to the startPos + syncAmount and so can 
+        sync any number of emails which are a subset of the emails stored on the mobile side. 
+      */
       for (int i = startPos; i < NDNMailSyncConsumerProducer.mailbox.syncAmount + startPos; i++) {
         String messageID = snapshot.messageID.get(i);
         ExternalProxy.expressInterest(
@@ -136,9 +142,13 @@ public class EmailFactory {
         try {
           MimeMessage message = new MimeMessage(ExternalProxy.session, baisMimeMessage);
           int uidSize = snapshot.messageUids.length;
-          System.out.println(">>>>>> UID: " + snapshot.messageUids[initSize + i]);
-          NdnFolder.uidToMime.put(snapshot.messageUids[initSize + i], message);
-          NdnFolder.uidToAttr.put(snapshot.messageUids[initSize + i], attribute);
+          System.out.println("InitSize + i" + initSize+i + "uidSize" + uidSize);
+          if(initSize+i<uidSize)  {    
+            System.out.println(">>>>>> UID: " + snapshot.messageUids[initSize + i]);
+            NdnFolder.uidToMime.put(snapshot.messageUids[initSize + i], message);
+            NdnFolder.uidToAttr.put(snapshot.messageUids[initSize + i], attribute);
+          }
+      
         } catch (MessagingException e) {
           e.printStackTrace();
         }

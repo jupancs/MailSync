@@ -106,7 +106,9 @@ public class MainServerFragment extends BaseFragment {
         return rootView;
     }
 
-    //Starts a thread that switches from ndnmode to normal mode depending on if network is available
+    /**
+     * Starts a thread that switches from ndnmode to normal mode depending on if network is available
+     */
     public void runServer(){
         new Thread(new Runnable() {
             public void run() {
@@ -192,7 +194,9 @@ public class MainServerFragment extends BaseFragment {
     }
 
 
-
+    /**
+     * Start Server
+     */
     @OnClick(R2.id.run_server)
     public void setRunServerButton() {
         Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
@@ -201,7 +205,10 @@ public class MainServerFragment extends BaseFragment {
         Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
         serverStatus.setText("Running ...");
     }
-    //Deletes database and updates UI
+
+    /**
+     * Deletes database and updates UI
+     */
     @OnClick(R2.id.btn_clear_database)
     public void setClearDatabaseButton() {
         EmailViewModel.clearDatabase();
