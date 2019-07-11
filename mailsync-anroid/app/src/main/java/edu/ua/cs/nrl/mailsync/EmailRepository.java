@@ -446,6 +446,12 @@ public class EmailRepository {
 
     }
 
+    public static boolean correctUID(long uid){
+        if(uid > 0){
+            return true;
+        } else return false;
+    }
+
 
 
     public void registerPrefix() {
