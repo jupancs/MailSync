@@ -12,6 +12,7 @@ public class EmailRepositoryTest {
     @Before
     public void init(){
         emailRepository = new EmailRepository();
+        emailRepository.deleteStoredMessage();
 
     }
 
@@ -77,6 +78,7 @@ public class EmailRepositoryTest {
         emailRepository.addIncompleteUids(100);
         assertTrue("isIncomplete should be true",EmailRepository.isIncomplete);
         assertArrayEquals("Duplicate 100 is added to the uid list",myArray.toArray(),EmailRepository.getIncompleteUids().toArray());
+        emailRepository.removeIncompleteUids(100);
     }
 
     @Test
