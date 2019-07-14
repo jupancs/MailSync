@@ -30,6 +30,27 @@ dependencies {
     }
     implementation 'net.named-data.jndn-extra:jndn-xx-util:0.0.2'
     implementation 'android.arch.lifecycle:extensions:1.1.1'
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-core:2.8.0'
+    testCompile 'org.powermock:powermock-api-mockito2:1.7.0RC2'
+    testCompile 'org.powermock:powermock-module-junit4:1.7.0'
+    testCompile 'org.powermock:powermock-core:1.7.0'
+    testCompile 'org.powermock:powermock-module-junit4-rule:1.7.0'
+//    // Required -- JUnit 4 framework
+//    testImplementation 'junit:junit:4.12'
+//    // Optional -- Mockito framework
+//    testImplementation 'org.mockito:mockito-core:2.8.9'
+//    compile group: 'org.powermock', name: 'powermock-module-junit4-legacy', version: '2.0.2'
+////    testImplementation "org.powermock:powermock-module-junit4:1.7.4"
+//    testCompile group: 'org.powermock', name: 'powermock-api-mockito', version: '1.7.4'
+////    implementation 'org.powermock:powermock-core:2.0.2'
+    // Android runner and rules support
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test:rules:1.2.0'
+
+
 }
 
 repositories {
@@ -62,7 +83,14 @@ android {
             targetCompatibility JavaVersion.VERSION_1_8
         }
         android.defaultConfig.javaCompileOptions.annotationProcessorOptions.includeCompileClasspath = true
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        testOptions {
+            unitTests.includeAndroidResources = true
+        }
+
     }
+
     buildTypes {
         release {
             minifyEnabled false
