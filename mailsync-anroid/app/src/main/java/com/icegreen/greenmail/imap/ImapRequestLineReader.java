@@ -35,7 +35,7 @@ public class ImapRequestLineReader {
     private char nextChar; // unknown
     private StringBuilder buf = new StringBuilder();
     private static final Pattern CARRIAGE_RETURN = Pattern.compile("\r\n");
-    EmailRepository emailRepository;
+    private static EmailRepository emailRepository;
 
     ImapRequestLineReader(InputStream input, OutputStream output) {
         this.input = input;
@@ -129,8 +129,9 @@ public class ImapRequestLineReader {
      * @param function function that needs to be performed either fetch or delete
      */
     public void extractUids(String a, String function) {
+        emailRepository = new EmailRepository();
         String s = new String (a);
-        if(function == "fetch"){ String[]dig=s.split(",");
+        if(function.equals("fetch")){ String[]dig=s.split(",");
             System.out.println("This is the string to extract uid from " + a);
             int numOfEmails=0;
             for(String i: dig){
@@ -143,11 +144,13 @@ public class ImapRequestLineReader {
             }
 
             EmailRepository.maxEmailsStored +=numOfEmails;
-        } else if (function == "delete") {
+        } else if (function.equals("delete")) {
             System.out.println("In the process of deleting " + a);
             if(android.text.TextUtils.isDigitsOnly(a)){
+                System.out.println("In here");
                 Long uid = Long.parseLong(a);
                 NdnFolder.deleteUID(uid);
+                emailRepository.removeIncompleteUids(uid);
                 if(NdnFolder.lastSize>0){
                     NdnFolder.lastSize--;
                 }

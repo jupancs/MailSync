@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import static org.junit.Assert.*;
 
 public class EmailRepositoryTest {
+
     EmailRepository emailRepository;
     @Before
     public void init(){

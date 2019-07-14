@@ -210,6 +210,11 @@ public class EmailRepository {
         }
     }
 
+    public void deleteStoredMessage(){
+        storedMessages = 0;
+    }
+    public void clearAllUids(){ incompleteUids.clear();}
+
     public void initSharedPreferences(){
         SharedPreferences sharedPref = context.getApplicationContext().getSharedPreferences("MessageUIDList",0);
     }
@@ -241,7 +246,10 @@ public class EmailRepository {
         if (view == null) {
             Log.d(TAG, "View is null inside increment");
         }
-        storedMessages--;
+        if(storedMessages > 0){
+            storedMessages--;
+        }
+
         textView = view.findViewById(R.id.stored_emails);
         updateText(Integer.toString(storedMessages) + "/" + maxEmailsStored);
     }

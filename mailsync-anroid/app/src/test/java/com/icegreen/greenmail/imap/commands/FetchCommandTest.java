@@ -13,4 +13,16 @@ public class FetchCommandTest {
     @Test
     public void splitNDN() {
     }
+
+    @Test
+    public void extractHeaderListNDN1() {
+    }
+
+    @Test
+    public void splitNDN1() {
+    }
+
+    @Test
+    public void addHeadersNDN() {
+    }
 }
