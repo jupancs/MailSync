@@ -212,11 +212,12 @@ public class MainServerFragment extends BaseFragment {
      */
     @OnClick(R2.id.run_server)
     public void setRunServerButton() {
+        serverStatus.setText(R.string.running);
         Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
         Log.d(TAG,"Are you working"  + userEmail+userPassword);
         emailViewModel.startServer(userEmail, userPassword);
         Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
-        serverStatus.setText("Running ...");
+
     }
 
     /**
