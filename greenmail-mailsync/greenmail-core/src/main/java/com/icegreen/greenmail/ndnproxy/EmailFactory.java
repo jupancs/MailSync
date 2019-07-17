@@ -12,6 +12,7 @@ import java.io.ObjectInputStream;
 
 public class EmailFactory {
   public static void start() throws IOException, ClassNotFoundException {
+    final int RETRANSMISSION_AMOUNT = 5;
     // Express NDN Interest
     /* ------------------------- MailFolder ------------------------- */
     // ExternalProxy.expressInterest(
@@ -27,19 +28,19 @@ public class EmailFactory {
 
     ExternalProxy.expressInterest("/mailSync/" + ExternalProxy.userEmail + "/inbox/1/probe");
     ExternalProxy.setNDNResult(false);
-    waitForReuslt();
+    ExternalProxy.setRetransmissionMax(RETRANSMISSION_AMOUNT);
+    waitForReuslt("/mailSync/" + ExternalProxy.userEmail + "/inbox/1/probe");
     String contentString = ExternalProxy.getContentString();
     // System.out.println("Content string: " + contentString);
     int mailFolderSize = Integer.valueOf(contentString);
-
+    int timeoutPeriod = 5;
 
     String value = "";
     for (int i = 0; i < mailFolderSize; i++) {
-      ExternalProxy.expressInterest(
-          "/mailSync/" + ExternalProxy.userEmail + "/inbox/1/MailFolder/1/v" + i
-      );
+      ExternalProxy.expressInterest("/mailSync/" + ExternalProxy.userEmail + "/inbox/1/MailFolder/1/v" + i);
       ExternalProxy.setNDNResult(false);
-      waitForReuslt();
+      ExternalProxy.setRetransmissionMax(RETRANSMISSION_AMOUNT);
+      waitForReuslt("/mailSync/" + ExternalProxy.userEmail + "/inbox/1/MailFolder/1/v" + i);
       value += ExternalProxy.getContentString();
     }
 
@@ -47,23 +48,23 @@ public class EmailFactory {
     System.out.println("value size: " + value.length());
     System.out.println("======================================================");
 
-//    ExternalProxy.expressInterest(
-//        "/mailSync/" + ExternalProxy.userEmail + "/inbox/1/MailFolder/1/v1"
-//    );
-//    ExternalProxy.setNDNResult(false);
-//    waitForReuslt();
-//    contentString = ExternalProxy.getContentString();
-//    value = contentString;
-//    ExternalProxy.expressInterest(
-//        "/mailSync/" + ExternalProxy.userEmail + "/inbox/1/MailFolder/1/v2"
-//    );
-//    ExternalProxy.setNDNResult(false);
-//    waitForReuslt();
-//    contentString = ExternalProxy.getContentString();
-//    value += contentString;
-//    System.out.println("======================================================");
-//    System.out.println("value size: " + value.length());
-//    System.out.println("======================================================");
+    // ExternalProxy.expressInterest(
+    // "/mailSync/" + ExternalProxy.userEmail + "/inbox/1/MailFolder/1/v1"
+    // );
+    // ExternalProxy.setNDNResult(false);
+    // waitForReuslt();
+    // contentString = ExternalProxy.getContentString();
+    // value = contentString;
+    // ExternalProxy.expressInterest(
+    // "/mailSync/" + ExternalProxy.userEmail + "/inbox/1/MailFolder/1/v2"
+    // );
+    // ExternalProxy.setNDNResult(false);
+    // waitForReuslt();
+    // contentString = ExternalProxy.getContentString();
+    // value += contentString;
+    // System.out.println("======================================================");
+    // System.out.println("value size: " + value.length());
+    // System.out.println("======================================================");
 
     ObjectInputStream ois;
     if (!contentString.equals("")) {
@@ -86,22 +87,23 @@ public class EmailFactory {
       int initSize = snapshot.initSize;
       int startPos = snapshot.syncCheckpoint;
       /*
-        The emailUIds are stored in increasing order that is UID 1,2,3 .... and every single email will have its UID stored
-        in messageUIDs Array List. MessageID will contain the list of IDs of only emails that were stored in the mobile side.
-        initSize is used to track the initial size of laptop side mailbox and so from that position syncing can occur for 
-        messageUIDs. startPos is used to iterate for both the messageUID arraylist and messageIDs Arraylist as it tracks
-        how many of the stored emails are synced. It syncs from the startPos to the startPos + syncAmount and so can 
-        sync any number of emails which are a subset of the emails stored on the mobile side. 
-      */
+       * The emailUIds are stored in increasing order that is UID 1,2,3 .... and every
+       * single email will have its UID stored in messageUIDs Array List. MessageID
+       * will contain the list of IDs of only emails that were stored in the mobile
+       * side. initSize is used to track the initial size of laptop side mailbox and
+       * so from that position syncing can occur for messageUIDs. startPos is used to
+       * iterate for both the messageUID arraylist and messageIDs Arraylist as it
+       * tracks how many of the stored emails are synced. It syncs from the startPos
+       * to the startPos + syncAmount and so can sync any number of emails which are a
+       * subset of the emails stored on the mobile side.
+       */
       for (int i = startPos; i < NDNMailSyncConsumerProducer.mailbox.syncAmount + startPos; i++) {
         String messageID = snapshot.messageID.get(i);
-        ExternalProxy.expressInterest(
-            "/mailSync/" + ExternalProxy.userEmail + "/inbox/1/attribute/" + messageID
-        );
-
+        ExternalProxy.expressInterest("/mailSync/" + ExternalProxy.userEmail + "/inbox/1/attribute/" + messageID);
+        ExternalProxy.setRetransmissionMax(RETRANSMISSION_AMOUNT);
         ExternalProxy.setNDNResult(false);
 
-        waitForReuslt();
+        waitForReuslt("/mailSync/" + ExternalProxy.userEmail + "/inbox/1/attribute/" + messageID);
 
         String contentStringAttribute = ExternalProxy.getContentString();
         String attributeValue = contentStringAttribute;
@@ -120,13 +122,11 @@ public class EmailFactory {
         StringBuilder messageBuilder = new StringBuilder();
         String mimeMessageContentString = null;
         for (int j = 0; j < numberOfMessage; j++) {
-          ExternalProxy.expressInterest(
-              "/mailSync/" + ExternalProxy.userEmail + "/inbox/1/MimeMessage/"
-                  + messageID + "/v" + j
-          );
+          ExternalProxy
+              .expressInterest("/mailSync/" + ExternalProxy.userEmail + "/inbox/1/MimeMessage/" + messageID + "/v" + j);
           ExternalProxy.setNDNResult(false);
-
-          waitForReuslt();
+          ExternalProxy.setRetransmissionMax(RETRANSMISSION_AMOUNT);
+          waitForReuslt("/mailSync/" + ExternalProxy.userEmail + "/inbox/1/MimeMessage/" + messageID + "/v" + j);
 
           mimeMessageContentString = ExternalProxy.getContentString();
           messageBuilder.append(mimeMessageContentString);
@@ -136,19 +136,18 @@ public class EmailFactory {
         ObjectInputStream oisMimeMessage;
 
         byte[] decodeByteArrayMimeMessage = BaseEncoding.base64().decode(valueMimeMessage);
-        ByteArrayInputStream baisMimeMessage =
-            new ByteArrayInputStream(decodeByteArrayMimeMessage);
+        ByteArrayInputStream baisMimeMessage = new ByteArrayInputStream(decodeByteArrayMimeMessage);
 
         try {
           MimeMessage message = new MimeMessage(ExternalProxy.session, baisMimeMessage);
           int uidSize = snapshot.messageUids.length;
-          System.out.println("InitSize + i" + initSize+i + "uidSize" + uidSize);
-          if(initSize+i<uidSize)  {    
+          System.out.println("InitSize + i" + initSize + i + "uidSize" + uidSize);
+          if (initSize + i < uidSize) {
             System.out.println(">>>>>> UID: " + snapshot.messageUids[initSize + i]);
             NdnFolder.uidToMime.put(snapshot.messageUids[initSize + i], message);
             NdnFolder.uidToAttr.put(snapshot.messageUids[initSize + i], attribute);
           }
-      
+
         } catch (MessagingException e) {
           e.printStackTrace();
         }
@@ -156,8 +155,12 @@ public class EmailFactory {
     }
   }
 
-  private static void waitForReuslt() {
+  private static void waitForReuslt(String interestName) {
     while (!ExternalProxy.getNDNResult()) {
+      while(ExternalProxy.retransmissionMax >= 0 && !ExternalProxy.getNDNResult()){
+        retransmitInterest(interestName);
+        ExternalProxy.retransmissionMax--;
+      }
       synchronized (ExternalProxy.monitor) {
         try {
           ExternalProxy.monitor.wait();
@@ -165,6 +168,18 @@ public class EmailFactory {
           System.out.println(e);
         }
       }
+    }
+  }
+
+  synchronized private static void retransmitInterest(String name) {
+    System.out.println("Retransmitting Interest" + name + ExternalProxy.retransmissionMax);
+    ExternalProxy.expressInterest(name);
+    try {
+      // Waiting for response for the interest
+      Thread.sleep(4000);
+    } catch (InterruptedException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
     }
   }
 
