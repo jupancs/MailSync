@@ -451,13 +451,13 @@ public class ExternalProxy extends Observable {
 
     // User input
     System.out.println("Enter your Google account: ");
-    // userEmail = scanner.next();
-    userEmail = "mailtestm72@gmail.com";
+    userEmail = scanner.next();
+    // userEmail = "mailtestm72@gmail.com";
     System.out.println("You email account is ===> " + userEmail);
 
     System.out.println("Enter your password: ");
-    // userPassword = scanner.next();
-    userPassword = "Abcdef12";
+    userPassword = scanner.next();
+    // userPassword = "*****";
     System.out.println("You password is ===> " + "*******");
 
     final ObservableValue ov = new ObservableValue(lastNetState);
