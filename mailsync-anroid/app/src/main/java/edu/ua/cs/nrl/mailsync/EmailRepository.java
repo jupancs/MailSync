@@ -94,6 +94,7 @@ public class EmailRepository {
     private static SharedPreferences sharedPreferences;
     private static List<Long> messageUIDList = new ArrayList<>();
     public static HashMap<Long, Flags> flagsMap = new HashMap<>();
+    public static boolean isRegistered = false;
 
     public EmailRepository(Context context, String userEmail, String userPassword) {
         this.context = context;
@@ -469,19 +470,26 @@ public class EmailRepository {
                 public void run() {
                     NfdcHelper nfdcHelper = new NfdcHelper();
                     try {
-                        List<String> ipList = getArpLiveIps(true);
-                        String connectedDeviceIp = ipList.get(0);
+                        if(!isRegistered){
+                            List<String> ipList = getArpLiveIps(true);
+                            String connectedDeviceIp = ipList.get(0);
 
-                        System.out.println("IP address is: " + connectedDeviceIp);
-                        String faceUri = "udp4://" + connectedDeviceIp + ":56363";
-                        int faceId = nfdcHelper.faceCreate(faceUri);
-                        nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
-                        nfdcHelper.shutdown();
+                            System.out.println("IP address is: " + connectedDeviceIp);
+                            String faceUri = "udp4://" + connectedDeviceIp + ":56363";
+                            int faceId = nfdcHelper.faceCreate(faceUri);
+                            nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
+                            isRegistered =true;
+                            nfdcHelper.shutdown();
+                        }
+
                     } catch (ManagementException e) {
+                        isRegistered = false;
                         e.printStackTrace();
                     } catch (FaceUri.CanonizeError canonizeError) {
+                        isRegistered = false;
                         canonizeError.printStackTrace();
                     } catch (Exception e) {
+                        isRegistered = false;
                         e.printStackTrace();
                     }
                 }
