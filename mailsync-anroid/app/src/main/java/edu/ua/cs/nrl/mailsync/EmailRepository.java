@@ -96,6 +96,7 @@ public class EmailRepository {
     public static HashMap<Long, Flags> flagsMap = new HashMap<>();
     public static boolean isRegistered = false;
 
+
     public EmailRepository(Context context, String userEmail, String userPassword) {
         this.context = context;
         this.userEmail = userEmail;
