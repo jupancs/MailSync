@@ -484,13 +484,10 @@ public class EmailRepository {
                         }
 
                     } catch (ManagementException e) {
-                        isRegistered = false;
                         e.printStackTrace();
                     } catch (FaceUri.CanonizeError canonizeError) {
-                        isRegistered = false;
                         canonizeError.printStackTrace();
                     } catch (Exception e) {
-                        isRegistered = false;
                         e.printStackTrace();
                     }
                 }
