@@ -507,18 +507,14 @@ public class EmailRepository {
                 public void run() {
                     NfdcHelper nfdcHelper = new NfdcHelper();
                     try {
-                        if(!isRegistered){
                             List<String> ipList = getArpLiveIps(true);
                             String connectedDeviceIp = ipList.get(0);
-
                             System.out.println("IP address is: " + connectedDeviceIp);
                             String faceUri = "udp4://" + connectedDeviceIp + ":56363";
                             int faceId = nfdcHelper.faceCreate(faceUri);
                             nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
-                            isRegistered =true;
+                            EmailRepository.isRegistered =true;
                             nfdcHelper.shutdown();
-                        }
-
                     } catch (ManagementException e) {
                         e.printStackTrace();
                     } catch (FaceUri.CanonizeError canonizeError) {
