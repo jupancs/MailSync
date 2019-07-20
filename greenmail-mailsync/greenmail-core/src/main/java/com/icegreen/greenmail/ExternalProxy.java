@@ -445,19 +445,19 @@ public class ExternalProxy extends Observable {
     props.setProperty("mail.store.protocol", "imaps");
     gmail.setUser(userEmail, userEmail, userPassword);
   }
-
+  
   public static void main(String argv[]) throws Exception {
     Scanner scanner = new Scanner(System.in);
 
     // User input
     System.out.println("Enter your Google account: ");
-    userEmail = scanner.next();
-    // userEmail = "mailtestm72@gmail.com";
+    // userEmail = scanner.next();
+    userEmail = "mailtestm72@gmail.com";
     System.out.println("You email account is ===> " + userEmail);
 
     System.out.println("Enter your password: ");
-    userPassword = scanner.next();
-    // userPassword = "*****";
+    // userPassword = scanner.next();
+    userPassword = "Abcdef12";
     System.out.println("You password is ===> " + "*******");
 
     final ObservableValue ov = new ObservableValue(lastNetState);

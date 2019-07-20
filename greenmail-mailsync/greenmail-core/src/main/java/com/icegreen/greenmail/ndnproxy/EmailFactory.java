@@ -13,6 +13,7 @@ import java.io.ObjectInputStream;
 public class EmailFactory {
   public static void start() throws IOException, ClassNotFoundException {
     final int RETRANSMISSION_AMOUNT = 5;
+   
     // Express NDN Interest
     /* ------------------------- MailFolder ------------------------- */
     // ExternalProxy.expressInterest(
@@ -157,10 +158,10 @@ public class EmailFactory {
 
   private static void waitForReuslt(String interestName) {
     while (!ExternalProxy.getNDNResult()) {
-      while(ExternalProxy.retransmissionMax >= 0 && !ExternalProxy.getNDNResult()){
-        retransmitInterest(interestName);
-        ExternalProxy.retransmissionMax--;
-      }
+      // while(ExternalProxy.retransmissionMax >= 0 && !ExternalProxy.getNDNResult()){
+      //   retransmitInterest(interestName);
+      //   ExternalProxy.retransmissionMax--;
+      // }
       synchronized (ExternalProxy.monitor) {
         try {
           ExternalProxy.monitor.wait();
@@ -171,16 +172,17 @@ public class EmailFactory {
     }
   }
 
-  synchronized private static void retransmitInterest(String name) {
+  synchronized public static void retransmitInterest(String name) {
     System.out.println("Retransmitting Interest" + name + ExternalProxy.retransmissionMax);
     ExternalProxy.expressInterest(name);
-    try {
-      // Waiting for response for the interest
-      Thread.sleep(4000);
-    } catch (InterruptedException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
+    ExternalProxy.retransmissionMax--;
+    // try {
+    //   // Waiting for response for the interest
+    //   Thread.sleep(5000);
+    // } catch (InterruptedException e) {
+    //   // TODO Auto-generated catch block
+    //   e.printStackTrace();
+    // }
   }
 
 }
