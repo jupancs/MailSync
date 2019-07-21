@@ -69,7 +69,7 @@ public class EmailFactory {
 
     ObjectInputStream ois;
     if (!contentString.equals("")) {
-      System.out.println(">>> MailFolder content: " + value);
+      // System.out.println(">>> MailFolder content: " + value);
       byte[] decodeByteArray = BaseEncoding.base64().decode(value);
       // System.out.println(">>> Decoded Value " + decodeByteArray.toString());
       ByteArrayInputStream bais = new ByteArrayInputStream(decodeByteArray);
