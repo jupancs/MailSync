@@ -236,9 +236,20 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                 Message message = folder.getMessage(getMsn(uid, folder));
                 MimeMessage mimeMessage = (MimeMessage) message;
                 mimeMessage = new MimeMessage(mimeMessage);
-                NdnFolder.messgeID.add(mimeMessage.getMessageID());
+                String messageID = mimeMessage.getMessageID();
+                System.out.println("Original MessageID" + messageID);
+
+                 /*
+                Replaces all characters of '=' with blank spaces as when saved in Translate Worker as
+                a Name it triggers logic for component type and parses it as integer
+                */
+
+                if(messageID.indexOf('=')!=-1){
+                    messageID = messageID.replace("=","");
+                }
+                NdnFolder.messgeID.add(messageID);
                 EmailRepository.nextUid = uid + 1;
-                TranslateWorker.start(mimeMessage, ExternalProxy.context, uid);
+                TranslateWorker.start(mimeMessage, ExternalProxy.context, uid, messageID);
                 NdnFolder.printMsgIds();
 
             }

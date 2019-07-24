@@ -1,5 +1,9 @@
 package com.icegreen.greenmail.ndnproxy;
 
+import android.annotation.TargetApi;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
+
 import com.google.common.primitives.Longs;
 import com.icegreen.greenmail.store.MessageFlags;
 import com.sun.mail.imap.IMAPFolder;
@@ -31,6 +35,7 @@ public class NdnFolder {
     public static int lastSize;
     public static int syncCheckpoint;
     public static HashMap<Long, Flags> flagsMap = new HashMap<>();
+    private static boolean messageListIsChanged = false;
 
     public static int updateSize() {
         int size = 0;
@@ -42,6 +47,7 @@ public class NdnFolder {
         return size;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public static Snapshot getSnapshot() throws MessagingException {
         snapshot = new Snapshot(0);
         snapshot.map = new HashMap<>();
@@ -71,6 +77,7 @@ public class NdnFolder {
         return snapshot;
     }
 
+    @RequiresApi(Build.VERSION_CODES.N)
     public static int getMsn(long uid) throws MessagingException {
         System.out.println("############# check 1 ############# check 1");
         long[] uids = getMessageUids();
@@ -84,6 +91,8 @@ public class NdnFolder {
         return -1;
     }
 
+
+
     //Used for printing the messageIds in the messageID list
     public static void printMsgIds() {
         System.out.println("MessageID List contains");
@@ -92,6 +101,7 @@ public class NdnFolder {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public static long[] getMessageUids() throws MessagingException {
         FetchProfile profile = new FetchProfile();
         profile.add(UIDFolder.FetchProfileItem.UID);
@@ -101,6 +111,16 @@ public class NdnFolder {
 
         messageUids = new long[folder.getMessageCount()];
         System.out.println("############# check 4 ############# check 4");
+
+        /*
+        Check to ensure that the messageuidlist is always updated but this
+        case should not occur
+         */
+        if(messageUidList.size()>messages.length || flagsMap.size() > messages.length){
+            messageUidList.clear();
+            flagsMap.clear();
+            lastSize = 0;
+        }
         int size = messages.length;
 //    sizeDiff = folder.getMessageCount() - getLastSize();
 //    for (int i = 0; i < size; i++) {
@@ -114,6 +134,15 @@ public class NdnFolder {
 //      messageUids[i] = folder.getUID(messages[i]);
 //      snapshot.flagMap.put(messageUidList.get(i), messages[i].getFlags());
             flagsMap.put(messageUidList.get(i), messages[i].getFlags());
+            messageListIsChanged = true;
+        }
+        if(messageListIsChanged){
+            /*
+                Updates the Stored uid list and flaghashmap only if the NdnFolder uidlist and flaghashmap changes
+             */
+            EmailRepository.saveFlagMap();
+            EmailRepository.saveMessageUIDList();
+            messageListIsChanged = false;
         }
         lastSize = folder.getMessageCount();
         System.out.println("Last size is: >>>>>>>> " + lastSize);
@@ -122,6 +151,27 @@ public class NdnFolder {
 //    return messageUids;
     }
 
+    /**
+     * When an email is deleted from the mailbox then the uid needs to be removed from
+     * the messageuidlist and flaghashmap and since the current implementation does not
+     * constantly go through the entire mailbox to update the messageuidlist the uid needs
+     * to be explicitly removed and the updated structures need to be stored
+     * @param uid uid of email to be removed from the messageuidlist and flaghashmap
+     */
+    public static void deleteUID(Long uid) {
+        boolean isDeleted = messageUidList.remove(uid);
+        flagsMap.remove(uid);
+        if(isDeleted){
+            System.out.println(uid + "Was deleted");
+        }
+        EmailRepository.saveFlagMap();
+        EmailRepository.saveMessageUIDList();
+
+
+
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
     private static int getFirstUnseen() throws MessagingException {
         Flags seen = new Flags(Flags.Flag.SEEN);
         FlagTerm unseenFlagTerm = new FlagTerm(seen, false);

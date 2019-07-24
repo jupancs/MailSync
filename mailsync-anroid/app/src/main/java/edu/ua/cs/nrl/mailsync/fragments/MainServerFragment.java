@@ -1,8 +1,11 @@
 package edu.ua.cs.nrl.mailsync.fragments;
 
 import android.arch.lifecycle.ViewModelProviders;
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -48,6 +51,7 @@ public class MainServerFragment extends BaseFragment {
     Button clearDatabaseButton;
     @BindView(R2.id.server_status)
     TextView serverStatus;
+    final String packageName = "net.named_data.nfd";
     private Unbinder unbinder;
     private String userEmail;
     private String userPassword;
@@ -104,6 +108,15 @@ public class MainServerFragment extends BaseFragment {
 
 
         return rootView;
+    }
+
+    /**
+     * Updates the NDNfolder messageuidlist and flags hashmap with the stored uidlist and hashmap
+     */
+    @Override
+    public void onResume() {
+        EmailRepository.updateMailboxUids();
+        super.onResume();
     }
 
     /**
@@ -216,6 +229,11 @@ public class MainServerFragment extends BaseFragment {
         emailRepository.deleteAllStoredMessage();
     }
 
+    @OnClick(R.id.run_nfd)
+    public void setRunNfd(){
+        startNewActivity(getContext(),packageName);
+    }
+
 //  @OnClick(R2.id.get_ip)
 //  public void setGetIpButton() {
 //    List<String> list = getArpLiveIps(true);
@@ -233,7 +251,23 @@ public class MainServerFragment extends BaseFragment {
 //        Toast.LENGTH_LONG).show();
 //  }
 
-
+    //Opens a new activity
+    // If nfd is installed opens it
+    // If nfd is not installed then goes to the play store and asks user to install it
+    public void startNewActivity(Context context, String packageName) {
+        Intent intent = context.getPackageManager().getLaunchIntentForPackage(packageName);
+        if (intent != null) {
+            // We found the activity now start the activity
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        } else {
+            // Bring user to the market or let them choose an app?
+            intent = new Intent(Intent.ACTION_VIEW);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.setData(Uri.parse("market://details?id=" + packageName));
+            context.startActivity(intent);
+        }
+    }
     @Override
     public void onDestroyView() {
         super.onDestroyView();

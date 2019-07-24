@@ -1,12 +1,16 @@
 package edu.ua.cs.nrl.mailsync;
 
+import android.annotation.TargetApi;
 import android.arch.lifecycle.MutableLiveData;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.StrictMode;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
@@ -15,6 +19,9 @@ import android.widget.Toast;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.icegreen.greenmail.ExternalProxy;
 import com.icegreen.greenmail.ndnproxy.NDNMailSyncOneThread;
 import com.icegreen.greenmail.ndnproxy.NdnFolder;
@@ -24,14 +31,24 @@ import com.intel.jndn.management.ManagementException;
 import net.named_data.jndn.Name;
 import net.named_data.jndn_xx.util.FaceUri;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import javax.mail.Flags;
 
 import edu.ua.cs.nrl.mailsync.database.NdnDBConnection;
 import edu.ua.cs.nrl.mailsync.database.NdnDBConnectionFactory;
@@ -74,6 +91,9 @@ public class EmailRepository {
     private boolean lastInternetState = true;
     private Relayer relayer;
     private MutableLiveData<Boolean> networkStatus;
+    private static SharedPreferences sharedPreferences;
+    private static List<Long> messageUIDList = new ArrayList<>();
+    public static HashMap<Long, Flags> flagsMap = new HashMap<>();
 
     public EmailRepository(Context context, String userEmail, String userPassword) {
         this.context = context;
@@ -190,6 +210,10 @@ public class EmailRepository {
         }
     }
 
+    public void initSharedPreferences(){
+        SharedPreferences sharedPref = context.getApplicationContext().getSharedPreferences("MessageUIDList",0);
+    }
+
     /**
      * Increments the stored messages number
      */
@@ -297,6 +321,132 @@ public class EmailRepository {
                 context.getApplicationContext()
         );
     }
+
+    /**
+     * Saves messageuidlist as a jsontext into sharedpreferences
+     */
+    public static void saveMessageUIDList(){
+        System.out.println("trying to save messageUIDList" + NdnFolder.messageUidList.isEmpty());
+            System.out.println("Saving MessageUIDList..The array is");
+            messageUIDList.clear();
+            messageUIDList.addAll(NdnFolder.messageUidList);
+            for(int i = 0;i < messageUIDList.size();i++){
+                System.out.print(messageUIDList.get(i) + " ");
+            }
+            Gson gson = new Gson();
+            String jsonText = gson.toJson(messageUIDList);
+            System.out.println("Json Text" + jsonText);
+            sharedPreferences = context.getSharedPreferences("uidlist",0);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString("msguid", jsonText);
+            editor.apply();
+
+    }
+
+    /**
+     * Updates the messageuidlist of ndnfolder by getting the stored messageuidlist from
+     * sharedpreferences. The messageuidlist is stored as  a jsontext and is parsed and
+     * retrieved
+     */
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public static void updateMessageUIDList(){
+        Gson gson = new Gson();
+        sharedPreferences = context.getSharedPreferences("uidlist",0);
+        String jsonText = sharedPreferences.getString("msguid", null);
+        System.out.println("Json Text" + jsonText);
+        if(jsonText!=null){
+            System.out.println("Updating messageUidList...");
+            List<String> textList = Arrays.asList(gson.fromJson(jsonText, String[].class));
+            messageUIDList = textList.stream().map(Long::parseLong).collect(Collectors.toList());
+            for(int i = 0;i < messageUIDList.size();i++){
+                System.out.print(messageUIDList.get(i) + " ");
+            }
+            NdnFolder.messageUidList.addAll(messageUIDList);
+        }
+//        String[] text = gson.fromJson(jsonText, String[].class);
+
+
+    }
+
+
+    /**
+     * Saves flagHashmap to as a Jsonarray and then into shared preferences
+     */
+    public static void saveFlagMap(){
+            flagsMap.clear();
+            flagsMap.putAll(NdnFolder.flagsMap);
+            System.out.println("Saved Flag Hash Map");
+            for(HashMap.Entry<Long,Flags> entry : flagsMap.entrySet()){
+                System.out.println("HashMap key" + entry.getKey() + "HashMap value" + entry.getValue());
+            }
+
+            JSONArray jsonArray = new JSONArray();
+            for(Long key: flagsMap.keySet()){
+                JSONObject jsonObject = new JSONObject();
+                try {
+                    jsonObject.put("key",key);
+                    jsonObject.put("val",flagsMap.get(key));
+                    jsonArray.put(jsonObject);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+            sharedPreferences = context.getSharedPreferences("flagmap",0);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString("map",jsonArray.toString());
+            System.out.println("JSON text saved is" + jsonArray.toString());
+            editor.apply();
+
+    }
+
+    /**
+     * Updates flaghashmap by retrieving it from SharedPreferences and parsing
+     * the string to convert it to a hashmap and then adding it to the ndnfolder
+     * hashmap
+     */
+    public static void updateFlagMap(){
+        System.out.println("Updating Flag Map");
+        sharedPreferences = context.getSharedPreferences("flagmap",0);
+        String jsonText = sharedPreferences.getString("map",null);
+        System.out.println("Update Flag map with " + jsonText);
+        if(jsonText!=null){
+            try {
+                JSONArray jsonArray = new JSONArray(jsonText);
+                for(int i = 0; i < jsonArray.length();i++) {
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    flagsMap.put(jsonObject.getLong("key"),new Flags(jsonObject.get("val").toString()));
+                    System.out.print("Value is " + flagsMap.get(jsonObject.getLong("key")));
+                }
+                NdnFolder.flagsMap.putAll(flagsMap);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    /**
+     * Checks if NDNFolder messagelist and flaghashmap is empty
+     * if it is then updates both of them with the stored hashmap and
+     * arraylist and updates the lastsize of ndnfolder so that it can
+     * start updating from that point
+     */
+    @RequiresApi(Build.VERSION_CODES.N)
+    public static void updateMailboxUids(){
+        System.out.println("ndnMessageList empty " + NdnFolder.messageUidList.isEmpty() + "ndnFlagMap Empty? " + NdnFolder.flagsMap.isEmpty());
+        if(NdnFolder.messageUidList.isEmpty() && NdnFolder.flagsMap.isEmpty()&&context!=null){
+            System.out.println("Updating FlagMap and uidlist");
+            updateMessageUIDList();
+            updateFlagMap();
+            NdnFolder.lastSize  = NdnFolder.messageUidList.size();
+        }
+
+        System.out.println("ndnMessageList length " + NdnFolder.messageUidList.size() + "ndnFlagMap size? " + NdnFolder.flagsMap.size());
+
+    }
+
+
 
     public void registerPrefix() {
         if (!isNetworkAvailable()) {

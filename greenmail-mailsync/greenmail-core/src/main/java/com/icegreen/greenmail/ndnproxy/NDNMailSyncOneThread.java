@@ -65,10 +65,21 @@ public class NDNMailSyncOneThread {
   public void expressInterest(String nameUri) {
     Name name = new Name(nameUri);
     try {
+          // Interest interest = new Interest(name);
+          // interest.setInterestLifetimeMilliseconds(10000);
+          // SegmentFetcher.fetch (face_, interest, (KeyChain)null , new SegmentFetcher.OnComplete() {
+          //       public void onComplete(Blob content) {
+          //         System.out.println(content);
+          //       }},
+          //     new SegmentFetcher.OnError() {
+          //       public void onError(SegmentFetcher.ErrorCode errorCode, String message) {
+          //         System.out.println(errorCode + message);
+          //     }});
       face_.expressInterest(name, cp, cp);
     } catch (Exception e) {
       System.out.println(e);
     }
+
   }
 
   public String getContentString() {
