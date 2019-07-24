@@ -86,7 +86,9 @@ public class NDNMailSyncConsumerProducer implements OnData, OnTimeout,
 
     ExternalProxy.setNDNResult(true);
   }
-
+/**
+ * OnTimeout checks if retransmission max is 0 if not then tries again to send interest packet
+ */
   public void onTimeout(Interest interest) {
     ++callbackCount_;
     System.out.println("Time out for interest " + interest.getName().toUri());

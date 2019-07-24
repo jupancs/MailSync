@@ -171,7 +171,11 @@ public class EmailFactory {
       }
     }
   }
-
+  /** 
+   * Retransmits interest of the name specified and reduces the retransmission max of External Porxy
+   * After the retransmission max is 0 there will not be any retransmission occuring
+   * @param name Name of the interest to retransmit
+  */
   synchronized public static void retransmitInterest(String name) {
     System.out.println("Retransmitting Interest" + name + ExternalProxy.retransmissionMax);
     ExternalProxy.expressInterest(name);
