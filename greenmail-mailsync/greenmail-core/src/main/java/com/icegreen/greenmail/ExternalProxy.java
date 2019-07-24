@@ -76,6 +76,7 @@ public class ExternalProxy extends Observable {
   static Flags testFlags = new Flags();
   static Properties props = new Properties();
   public static Session session = Session.getInstance(props, null);
+  public static int retransmissionMax = 0;
 
   public static int getSelectedProxy() {
     if (proxySelection == 0) {
@@ -106,6 +107,12 @@ public class ExternalProxy extends Observable {
       synchronized(monitor) {
         monitor.notifyAll();
       }
+    }
+  }
+
+  public static void setRetransmissionMax(int x){
+    if(retransmissionMax >= 0){
+      retransmissionMax = x;
     }
   }
 
@@ -438,7 +445,7 @@ public class ExternalProxy extends Observable {
     props.setProperty("mail.store.protocol", "imaps");
     gmail.setUser(userEmail, userEmail, userPassword);
   }
-
+  
   public static void main(String argv[]) throws Exception {
     Scanner scanner = new Scanner(System.in);
 

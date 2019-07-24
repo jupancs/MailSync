@@ -94,6 +94,8 @@ public class EmailRepository {
     private static SharedPreferences sharedPreferences;
     private static List<Long> messageUIDList = new ArrayList<>();
     public static HashMap<Long, Flags> flagsMap = new HashMap<>();
+    public static boolean isRegistered = false;
+    private static HashMap<Long, Boolean> isGettingFetched = new HashMap<>();
 
     public EmailRepository(Context context, String userEmail, String userPassword) {
         this.context = context;
@@ -103,6 +105,42 @@ public class EmailRepository {
 
     public EmailRepository() {
 
+    }
+
+    /**
+     * When an email is getting fetched it gets added to this HashMap
+     * so that we avoid fetching the same email more than once
+     * @param uid uid of the email getting fetched
+     */
+    public static void addToisGettingFetched(long uid){
+        System.out.println(uid +" is getting fetched");
+        isGettingFetched.put(uid,true);
+    }
+
+    /**
+     * Once fetching of the email is done it should be removed from the
+     * Hashmap using this command
+     * @param uid uid of the email done getting fetched
+     */
+    public static void doneGettingFetched(long uid){
+        System.out.println(uid +" is done getting fetched");
+        isGettingFetched.remove(uid);
+    }
+
+    /**
+     * This can be used to check if the email is getting fetched or not
+     * depending on if it is in the Hashmap or not
+     * @param uid uid of the email to check
+     * @return
+     */
+    public static boolean checkGettingFetched(long uid){
+        System.out.println(uid +" is getting fetched" + isGettingFetched.get(uid));
+        if(isGettingFetched.get(uid)==null){
+            return false;
+        }
+        else {
+            return isGettingFetched.get(uid);
+        }
     }
 
 
@@ -469,14 +507,14 @@ public class EmailRepository {
                 public void run() {
                     NfdcHelper nfdcHelper = new NfdcHelper();
                     try {
-                        List<String> ipList = getArpLiveIps(true);
-                        String connectedDeviceIp = ipList.get(0);
-
-                        System.out.println("IP address is: " + connectedDeviceIp);
-                        String faceUri = "udp4://" + connectedDeviceIp + ":56363";
-                        int faceId = nfdcHelper.faceCreate(faceUri);
-                        nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
-                        nfdcHelper.shutdown();
+                            List<String> ipList = getArpLiveIps(true);
+                            String connectedDeviceIp = ipList.get(0);
+                            System.out.println("IP address is: " + connectedDeviceIp);
+                            String faceUri = "udp4://" + connectedDeviceIp + ":56363";
+                            int faceId = nfdcHelper.faceCreate(faceUri);
+                            nfdcHelper.ribRegisterPrefix(new Name("mailSync"), faceId, 10, true, false);
+                            EmailRepository.isRegistered =true;
+                            nfdcHelper.shutdown();
                     } catch (ManagementException e) {
                         e.printStackTrace();
                     } catch (FaceUri.CanonizeError canonizeError) {

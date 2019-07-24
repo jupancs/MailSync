@@ -258,7 +258,7 @@ public class RegisterRoute {
         Interest interest = new Interest(new Name("/localhost/nfd/faces/create"));
         interest.getName().append(encodedControlParameters);
         interest.setInterestLifetimeMilliseconds(10000);
-        System.out.println("In here");
+        // System.out.println("In here");
         // Sign and express the interest.
         face.makeCommandInterest(interest);
         face.expressInterest
@@ -266,7 +266,7 @@ public class RegisterRoute {
                 new OnData() {
                   public void onData(Interest interest, Data data) {
                     processCreateFaceResponse(data.getContent(), prefix, face, enabled);
-                    System.out.println("ProcessFaceStatus is working + Data is " + data.getContent());
+                    // System.out.println("ProcessFaceStatus is working + Data is " + data.getContent());
                   }},
                 new OnTimeout() {
                   public void onTimeout(Interest interest) {
@@ -275,7 +275,7 @@ public class RegisterRoute {
                   }});
       }
       else {
-        System.out.println("In here 2");
+        // System.out.println("In here 2");
         FaceStatusMessage.Builder decodedFaceStatus = FaceStatusMessage.newBuilder();
         ProtobufTlv.decode(decodedFaceStatus, encodedFaceStatus);
 
@@ -306,17 +306,17 @@ public class RegisterRoute {
   (Blob encodedControlResponse, Name prefix, Face face, final boolean[] enabled)
   {
     try {
-      System.out.println("Here 4 EncodedCR" + encodedControlResponse + "prefix" + prefix);
+      // System.out.println("Here 4 EncodedCR" + encodedControlResponse + "prefix" + prefix);
 
       ControlParametersResponseMessage.Builder decodedControlResponse =
           ControlParametersResponseMessage.newBuilder();
-          System.out.println("Here 6 + decodedControlResponse " + decodedControlResponse);
+          // System.out.println("Here 6 + decodedControlResponse " + decodedControlResponse);
 
       ProtobufTlv.decode(decodedControlResponse, encodedControlResponse);
-      System.out.println("Decoded Response is" + decodedControlResponse + "EncodedControlResponse is " + encodedControlResponse);
+      // System.out.println("Decoded Response is" + decodedControlResponse + "EncodedControlResponse is " + encodedControlResponse);
       ControlParametersResponse controlResponse =
           decodedControlResponse.getControlResponse();
-          System.out.println("Here 7 + Control Response is " + controlResponse);
+          // System.out.println("Here 7 + Control Response is " + controlResponse);
 
       final int lowestErrorCode = 400;
       System.out.println("Here 5");

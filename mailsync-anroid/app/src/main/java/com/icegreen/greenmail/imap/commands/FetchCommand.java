@@ -228,7 +228,8 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
      */
     private void saveToNdnStorage(IMAPFolder folder, long uid) {
         try {
-            if (emailRepository.isNetworkAvailable()) {
+            if (emailRepository.isNetworkAvailable() && !EmailRepository.checkGettingFetched(uid)) {
+                EmailRepository.addToisGettingFetched(uid);
                 emailRepository.incrementStoredMessages();
                 System.out.println("Stored Message Count" + emailRepository.getStoredMessages());
                 System.out.println("Sync Amount increased to " + NdnFolder.syncNumber);
@@ -251,6 +252,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                 EmailRepository.nextUid = uid + 1;
                 TranslateWorker.start(mimeMessage, ExternalProxy.context, uid, messageID);
                 NdnFolder.printMsgIds();
+
 
             }
 

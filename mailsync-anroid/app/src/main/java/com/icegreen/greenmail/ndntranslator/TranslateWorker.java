@@ -260,7 +260,12 @@ public class TranslateWorker {
         emailRepository.getAllUids();
         emailRepository.notifyStorageCompletion();
         emailRepository.removeIncompleteUids(uid);
+        EmailRepository.doneGettingFetched(uid);
         System.out.println("Translate Worker Ended");
-        return;
+
+
+
+
+
     }
 }
