@@ -61,13 +61,17 @@ public class LoginFragment extends BaseFragment {
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
     super.onActivityResult(requestCode, resultCode, data);
     if(requestCode == RC_SIGN_IN){
-      System.out.println("In here gmail 2");
+//      System.out.println("In here gmail 2");
       Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
       handleSiginResult(task);
 
     }
   }
 
+  /**
+   * Changes fragment from login to mainserver and updates the viewmodel
+   * @param task GoogleSignIn Task
+   */
   public void handleSiginResult(Task<GoogleSignInAccount> task){
     try{
       System.out.println("In here gmail");
@@ -115,9 +119,13 @@ public class LoginFragment extends BaseFragment {
     fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer,new MainServerFragment());
     fragmentTransaction.commit();
   }
+
+  /**
+   * Starts google sign in intent
+   */
   @OnClick(R.id.sign_in_button)
   public void clickGmailLogin(){
-      System.out.println("In here gmail");
+//      System.out.println("In here gmail");
       Intent signInIntent = googleSignInClient.getSignInIntent();
       startActivityForResult(signInIntent,RC_SIGN_IN);
   }

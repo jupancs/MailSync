@@ -230,6 +230,10 @@ public class MainServerFragment extends BaseFragment {
 
     /**
      * Start Server
+     * Depends on if the user is logged in through gmail or through traditional app username and password
+     * If user is logged through google sign in then a pop up dialog is created to ask password from the user
+     * because google does not give access to password  and then starts a server
+     * If user logged in through normal means then there is no dialog box that will open
      */
     @OnClick(R2.id.run_server)
     public void setRunServerButton() {
@@ -329,6 +333,11 @@ public class MainServerFragment extends BaseFragment {
             context.startActivity(intent);
         }
     }
+
+    /**
+     * When signout is clicked the gmail account is signed out and then sent to
+     * the login page
+     */
     @OnClick(R.id.sign_out)
     public void signOut() {
         if (googleSignInClient != null) {
