@@ -258,7 +258,9 @@ public class EmailRepository {
     }
 
     public void clearDatabase() {
+        System.out.println("Again trying to clear");
         try {
+            System.out.println("In here");
             new Database("MailFolder", ndnDBConnection.getConfig()).delete();
             new Database("Attribute", ndnDBConnection.getConfig()).delete();
             new Database("MimeMessage", ndnDBConnection.getConfig()).delete();

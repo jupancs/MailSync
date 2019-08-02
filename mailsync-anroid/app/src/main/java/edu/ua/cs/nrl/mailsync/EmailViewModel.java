@@ -22,6 +22,7 @@ public class EmailViewModel extends AndroidViewModel {
     }
 
     public static void clearDatabase() {
+        System.out.println("In here clearing");
         emailRepository.clearDatabase();
 
     }

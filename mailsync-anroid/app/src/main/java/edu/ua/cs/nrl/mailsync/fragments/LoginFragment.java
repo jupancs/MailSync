@@ -13,6 +13,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.SignInButton;
+import com.google.android.gms.common.api.Api;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -25,6 +34,7 @@ import edu.ua.cs.nrl.mailsync.activities.MainServerActivity;
 
 public class LoginFragment extends BaseFragment {
 
+
   @BindView(R2.id.fragment_login_userEmail)
   TextInputEditText userEmailEditText;
 
@@ -34,6 +44,8 @@ public class LoginFragment extends BaseFragment {
   @BindView(R2.id.fragment_login_login_button)
   Button loginButton;
 
+  int RC_SIGN_IN =0;
+  GoogleSignInClient googleSignInClient;
   private Unbinder unbinder;
 
   private String email;
@@ -46,9 +58,38 @@ public class LoginFragment extends BaseFragment {
   }
 
   @Override
+  public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    if(requestCode == RC_SIGN_IN){
+      System.out.println("In here gmail 2");
+      Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+      handleSiginResult(task);
+
+    }
+  }
+
+  public void handleSiginResult(Task<GoogleSignInAccount> task){
+    try{
+      System.out.println("In here gmail");
+      GoogleSignInAccount account = task.getResult(ApiException.class);
+      emailViewModel.getEmail().setValue(account.getEmail());
+      emailViewModel.getPassword().setValue("Google Sign In");
+      FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+      fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer,new MainServerFragment());
+      fragmentTransaction.commit();
+    } catch (ApiException e){
+      System.out.println(e);
+    }
+  }
+
+  @Override
   public void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     ((AppCompatActivity) getActivity()).getSupportActionBar().hide();
+    GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+            .build();
+    googleSignInClient = GoogleSignIn.getClient(getActivity(),gso);
   }
 
   @Nullable
@@ -77,8 +118,25 @@ public class LoginFragment extends BaseFragment {
     fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer,new MainServerFragment());
     fragmentTransaction.commit();
   }
+  @OnClick(R.id.sign_in_button)
+  public void clickGmailLogin(){
+      System.out.println("In here gmail");
+      Intent signInIntent = googleSignInClient.getSignInIntent();
+      startActivityForResult(signInIntent,RC_SIGN_IN);
+  }
 
-
+  @Override
+  public void onStart() {
+    super.onStart();
+    GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getActivity());
+    if(account!=null){
+      emailViewModel.getEmail().setValue(account.getEmail());
+      emailViewModel.getPassword().setValue("Google Sign In");
+      FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+      fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer,new MainServerFragment());
+      fragmentTransaction.commit();
+    }
+  }
 
 
   @Override

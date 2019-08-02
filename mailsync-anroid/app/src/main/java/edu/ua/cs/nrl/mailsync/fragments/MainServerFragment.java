@@ -1,10 +1,12 @@
 package edu.ua.cs.nrl.mailsync.fragments;
 
+import android.app.Dialog;
 import android.arch.lifecycle.ViewModelProviders;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.util.Log;
@@ -12,8 +14,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 
 import javax.mail.Message;
 
@@ -50,8 +58,11 @@ public class MainServerFragment extends BaseFragment {
     private String userEmail;
     private String userPassword;
     private EmailViewModel emailViewModel;
+    private GoogleSignInClient googleSignInClient;
+    GoogleSignInAccount account;
 
     private String TAG = "MainServerFragment";
+    private boolean isGoogleSignin = false;
 
     public static MainServerFragment newInstance() {
         return new MainServerFragment();
@@ -67,6 +78,15 @@ public class MainServerFragment extends BaseFragment {
         ColorDrawable colorDrawable = new ColorDrawable(Color.parseColor("#ffffff"));
         actionBar.setBackgroundDrawable(colorDrawable);
         actionBar.setTitle(Html.fromHtml("<font color='#009a68'>MailSync</font>"));
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+        googleSignInClient = GoogleSignIn.getClient(getActivity(), gso);
+        account = GoogleSignIn.getLastSignedInAccount(getActivity());
+        if (account != null) {
+            isGoogleSignin = true;
+        }
+
         emailViewModel.init(userEmail, userPassword);
 
     }
@@ -100,14 +120,49 @@ public class MainServerFragment extends BaseFragment {
 
     @OnClick(R2.id.run_server)
     public void setRunServerButton() {
-        Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
-        emailViewModel.startServer(userEmail, userPassword);
-        Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
-        serverStatus.setText("Running ...");
+        if (isGoogleSignin) {
+            final Dialog dialog = new Dialog(getActivity());
+            dialog.setContentView(R.layout.customdialog);
+            dialog.setTitle("Connect");
+            Button dialogButton = (Button) dialog.findViewById(R.id.btnLogin);
+            EditText editText = dialog.findViewById(R.id.etPassword);
+            // if button is clicked, close the custom dialog
+            dialogButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    EditText editText = dialog.findViewById(R.id.etPassword);
+                    System.out.println("Edit text " + editText);
+                    if (editText!= null) {
+                        emailViewModel.getPassword().setValue(String.valueOf(editText.getText()));
+                        emailViewModel.init(userEmail, userPassword);
+                        Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
+                        emailViewModel.startServer(userEmail, userPassword);
+                        Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
+                        serverStatus.setText(getString(R.string.running));
+                    }
+
+                    dialog.dismiss();
+                }
+            });
+
+            dialog.show();
+
+        }
+        else{
+            Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
+            emailViewModel.startServer(userEmail, userPassword);
+            Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
+            serverStatus.setText(getString(R.string.running));
+
+        }
+
+
+
     }
 
     @OnClick(R2.id.btn_clear_database)
     public void setClearDatabaseButton() {
+        System.out.println("Trying to clear");
         EmailViewModel.clearDatabase();
     }
 
@@ -128,6 +183,18 @@ public class MainServerFragment extends BaseFragment {
 //        Toast.LENGTH_LONG).show();
 //  }
 
+    @OnClick(R.id.sign_out)
+    public void signOut() {
+        if (googleSignInClient != null) {
+            googleSignInClient.signOut()
+                    .addOnCompleteListener(getActivity(), (task) -> {
+                        Toast.makeText(getContext(), "Signed Out", Toast.LENGTH_SHORT).show();
+                        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+                        fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer, new LoginFragment());
+                        fragmentTransaction.commit();
+                    });
+        }
+    }
 
     @Override
     public void onDestroyView() {
