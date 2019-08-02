@@ -32,6 +32,7 @@ public class EmailViewModel extends AndroidViewModel {
      * Clears Database by calling clearDatabase method of EmailRepository
      */
     public static void clearDatabase() {
+        System.out.println("In here clearing");
         emailRepository.clearDatabase();
 
     }
@@ -82,9 +83,8 @@ public class EmailViewModel extends AndroidViewModel {
      *
      * @param userEmail    email of the user
      * @param userPassword password of the user
-     * @param button       startserver button
      */
-    public void init(String userEmail, String userPassword, Button button) {
+    public void init(String userEmail, String userPassword) {
         emailRepository = new EmailRepository(getApplication().getApplicationContext(), userEmail, userPassword);
         emailRepository.init(view);
 

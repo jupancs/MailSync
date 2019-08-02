@@ -753,6 +753,7 @@ public class EmailRepository {
      * Clears Database and sets sync number and sync checkpoint to 0
      */
     public void clearDatabase() {
+        System.out.println("Again trying to clear");
         try {
             NdnFolder.syncNumber = 0;
             NdnFolder.syncCheckpoint = 0;
