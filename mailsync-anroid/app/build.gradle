@@ -17,7 +17,7 @@ dependencies {
     implementation 'com.jakewharton:butterknife:9.0.0-rc2'
     annotationProcessor 'com.jakewharton:butterknife-compiler:9.0.0-rc2'
     implementation 'com.makeramen:roundedimageview:2.3.0'
-    implementation 'com.couchbase.lite:couchbase-lite-android-ee:2.5.0'
+    implementation 'com.couchbase.lite:couchbase-lite-android:2.5.3'
     api 'com.google.guava:guava:26.0-android'
     implementation 'com.android.volley:volley:1.1.1'
 
@@ -63,9 +63,6 @@ dependencies {
         google()
         jcenter()
         mavenCentral()
-        maven {
-            url "http://mobile.maven.couchbase.com/maven2/dev/"
-        }
     }
 
     android {
