@@ -100,17 +100,17 @@ public class TranslateWorker {
         System.out.println(" Ding Ding");
         Snapshot snapshot = NdnFolder.getSnapshot();
         oos.writeObject(snapshot);
-        Log.d(TAG,"Exists" + snapshot.exists + "Recent Count" + snapshot.recent + "UidValidity" +snapshot.uidvalidity + "Uidnext"
-                +snapshot.uidnext + "\n" + "First unseen" + snapshot.unseen + "Size" +snapshot.size + "Last Size" + NdnFolder.lastSize
-                + "Sync number" + snapshot.syncAmount + "Sync Checkpoint" +snapshot.syncCheckpoint + "InitSize" +snapshot.initSize + "MessageID" +  mimeMessageID);
-        Log.d(TAG,"MessageUID List");
+//        Log.d(TAG,"Exists" + snapshot.exists + "Recent Count" + snapshot.recent + "UidValidity" +snapshot.uidvalidity + "Uidnext"
+//                +snapshot.uidnext + "\n" + "First unseen" + snapshot.unseen + "Size" +snapshot.size + "Last Size" + NdnFolder.lastSize
+//                + "Sync number" + snapshot.syncAmount + "Sync Checkpoint" +snapshot.syncCheckpoint + "InitSize" +snapshot.initSize + "MessageID" +  mimeMessageID);
+//        Log.d(TAG,"MessageUID List");
         for(Long num: NdnFolder.messageUidList){
             Log.d(TAG, " " + num);
         }
-        Log.d(TAG,"MessageID List");
-        for(String string: NdnFolder.messgeID){
-            Log.d(TAG, " " + string);
-        }
+//        Log.d(TAG,"MessageID List");
+//        for(String string: NdnFolder.messgeID){
+//            Log.d(TAG, " " + string);
+//        }
         System.out.println("messageUids size: : : : : " + NdnFolder.messageUidList.size());
         System.out.println(" Da Da");
         System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^");
@@ -256,7 +256,7 @@ public class TranslateWorker {
 
         }
 
-        System.out.println("Saved Email with UID: " + uid);
+//        System.out.println("Saved Email with UID: " + uid);
         emailRepository.getAllUids();
         emailRepository.notifyStorageCompletion();
         emailRepository.removeIncompleteUids(uid);

@@ -66,6 +66,7 @@ public class CouchbaseLiteConnection implements NdnDBConnection {
 
   @Override
   public DatabaseConfiguration getConfig() {
+    System.out.println("Config" + config.toString());
     return config;
   }
 

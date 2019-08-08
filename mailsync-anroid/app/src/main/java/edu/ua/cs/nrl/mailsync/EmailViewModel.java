@@ -7,6 +7,8 @@ import android.support.annotation.NonNull;
 import android.view.View;
 import android.widget.Button;
 
+import java.io.File;
+
 
 /**
  * Handles the information needed to be maintained throughout the use of the app
@@ -32,7 +34,7 @@ public class EmailViewModel extends AndroidViewModel {
      * Clears Database by calling clearDatabase method of EmailRepository
      */
     public static void clearDatabase() {
-        System.out.println("In here clearing");
+//        System.out.println("In here clearing");
         emailRepository.clearDatabase();
 
     }

@@ -209,7 +209,10 @@ public class MainServerFragment extends BaseFragment {
                                 public void run() {
 //                  synchronized (TranslateWorker.class) {
 //                                    emailViewModel.shutdownRelayer();
-                                    runServerButton.performClick();
+                                    if(runServerButton!=null){
+                                        runServerButton.performClick();
+                                    }
+
                                     System.out.println("Server Started");
                                     emailViewModel.getAllUids();
 //                  }
@@ -288,7 +291,7 @@ public class MainServerFragment extends BaseFragment {
      */
     @OnClick(R2.id.btn_clear_database)
     public void setClearDatabaseButton() {
-        System.out.println("Trying to clear");
+//        System.out.println("Trying to clear");
         EmailViewModel.clearDatabase();
         EmailRepository emailRepository = new EmailRepository();
         emailRepository.deleteAllStoredMessage();
