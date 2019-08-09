@@ -351,7 +351,15 @@ public class MainServerFragment extends BaseFragment {
                         fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer, new LoginFragment());
                         fragmentTransaction.commit();
                     });
+        } else {
+            emailViewModel.removeUser();
+            Toast.makeText(getContext(), "Signed Out" + emailViewModel.getEmail() + emailViewModel.getPassword(), Toast.LENGTH_SHORT).show();
+            FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+            fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer, new LoginFragment());
+            fragmentTransaction.commit();
         }
+        emailViewModel.removeUser();
+
     }
 
     @Override

@@ -96,6 +96,7 @@ public class EmailRepository {
     public static HashMap<Long, Flags> flagsMap = new HashMap<>();
     public static boolean isRegistered = false;
     private static HashMap<Long, Boolean> isGettingFetched = new HashMap<>();
+    private static HashMap<String,String> hmap = new HashMap<>();
 
     public EmailRepository(Context context, String userEmail, String userPassword) {
         this.context = context;
@@ -804,6 +805,43 @@ public class EmailRepository {
 
             }
         });
+    }
+
+    public void saveUser(String pass, String userName){
+        sharedPreferences = context.getSharedPreferences("User",0);
+        SharedPreferences.Editor editor= sharedPreferences.edit();
+        editor.putString("pass",pass);
+        editor.putString("userName",userName);
+        editor.apply();
+    }
+
+    public void removeUser(){
+        sharedPreferences = context.getSharedPreferences("User",0);
+        SharedPreferences.Editor editor= sharedPreferences.edit();
+        editor.remove("pass");
+        editor.remove("userName");
+        editor.clear();
+        editor.commit();
+
+        sharedPreferences = context.getSharedPreferences("User",0);
+        String name = sharedPreferences.getString("userName","");
+        String pass = sharedPreferences.getString("pass","");
+        Log.d("Remove","Remove User" + name + pass);
+
+        hmap.clear();
+    }
+
+    public HashMap<String, String> getUser(){
+        hmap.clear();
+        sharedPreferences = context.getSharedPreferences("User",0);
+        String name = sharedPreferences.getString("userName","");
+        String pass = sharedPreferences.getString("pass","");
+        if(name==null || pass==null) {
+            return null;
+        }
+        hmap.put("name",name);
+        hmap.put("pass",pass);
+        return hmap;
     }
 
 }

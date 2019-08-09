@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -21,6 +22,8 @@ import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.Api;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
+
+import java.util.HashMap;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -114,7 +117,7 @@ public class LoginFragment extends BaseFragment {
     password = userPasswordEditText.getText().toString();
     emailViewModel.getEmail().setValue(email);
     emailViewModel.getPassword().setValue(password);
-
+    emailViewModel.saveUser(password,email);
     FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
     fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer,new MainServerFragment());
     fragmentTransaction.commit();
@@ -134,12 +137,25 @@ public class LoginFragment extends BaseFragment {
   public void onStart() {
     super.onStart();
     GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getActivity());
+    HashMap<String, String>hmap = emailViewModel.getUser();
     if(account!=null){
       emailViewModel.getEmail().setValue(account.getEmail());
       emailViewModel.getPassword().setValue("Google Sign In");
       FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
       fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer,new MainServerFragment());
       fragmentTransaction.commit();
+    } else if(hmap!=null){
+      if(!hmap.get("name").equals("") && !hmap.get("pass").equals("")){
+        System.out.println("I am executed" + hmap.get("name") + hmap.get("pass"));
+        emailViewModel.getEmail().setValue(hmap.get("name"));
+        emailViewModel.getPassword().setValue(hmap.get("pass"));
+//        System.out.println("Pass" + hmap.get("pass") + " " + "User" + hmap.get("name"));
+        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+        fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer,new MainServerFragment());
+        fragmentTransaction.commit();
+      }
+
+
     }
   }
 

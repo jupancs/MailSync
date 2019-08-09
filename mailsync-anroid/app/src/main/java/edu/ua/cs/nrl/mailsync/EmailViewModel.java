@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.Button;
 
 import java.io.File;
+import java.util.HashMap;
 
 
 /**
@@ -98,6 +99,18 @@ public class EmailViewModel extends AndroidViewModel {
      */
     public void getAllUids() {
         emailRepository.getAllUids();
+    }
+
+    public void saveUser(String pass, String userName){
+        emailRepository.saveUser(pass,userName);
+    }
+
+    public HashMap<String, String> getUser(){
+        init("","");
+        return emailRepository.getUser();
+    }
+    public void removeUser(){
+        emailRepository.removeUser();
     }
 
 
