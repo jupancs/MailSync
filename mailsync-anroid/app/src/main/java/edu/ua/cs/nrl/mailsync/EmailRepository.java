@@ -807,6 +807,11 @@ public class EmailRepository {
         });
     }
 
+    /**
+     * Saves the password and username as a shared preference
+     * @param pass pass of the user
+     * @param userName userName of the user
+     */
     public void saveUser(String pass, String userName){
         sharedPreferences = context.getSharedPreferences("User",0);
         SharedPreferences.Editor editor= sharedPreferences.edit();
@@ -815,6 +820,9 @@ public class EmailRepository {
         editor.apply();
     }
 
+    /**
+     * Removes user from the app by removing the account from the shared preference
+     */
     public void removeUser(){
         sharedPreferences = context.getSharedPreferences("User",0);
         SharedPreferences.Editor editor= sharedPreferences.edit();
@@ -831,6 +839,10 @@ public class EmailRepository {
         hmap.clear();
     }
 
+    /**
+     * Returns user details so that it can be used to log in into the app
+     * @return Hashmap containing the user details
+     */
     public HashMap<String, String> getUser(){
         hmap.clear();
         sharedPreferences = context.getSharedPreferences("User",0);

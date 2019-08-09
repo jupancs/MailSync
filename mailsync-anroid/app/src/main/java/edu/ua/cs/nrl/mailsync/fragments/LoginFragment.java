@@ -133,6 +133,12 @@ public class LoginFragment extends BaseFragment {
       startActivityForResult(signInIntent,RC_SIGN_IN);
   }
 
+
+  /**
+   * Checks if there already exists a gmail account which was logged in last time or
+   * if there already exists an account that was saved before hand through normal login
+   * If there was then it reloads that into the app
+   */
   @Override
   public void onStart() {
     super.onStart();
