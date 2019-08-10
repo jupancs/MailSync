@@ -51,9 +51,9 @@ public class ImapToNdnTranslator extends BaseFragment implements NdnTranslator {
     return encodedString;
   }
 //Offers ndnDbConnection for garbage collection and remmoves all connection with it
-  public static void stopDB(){
-    ndnDBConnection = null;
-  }
+//  public static void stopDB(){
+//    ndnDBConnection = null;
+//  }
 
   @Override
   public byte[] encodeMimeMessage(MimeMessage mimeMessage, Name name) {

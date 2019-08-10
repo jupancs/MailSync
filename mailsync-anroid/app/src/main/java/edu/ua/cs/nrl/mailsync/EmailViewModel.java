@@ -7,6 +7,9 @@ import android.support.annotation.NonNull;
 import android.view.View;
 import android.widget.Button;
 
+import java.io.File;
+import java.util.HashMap;
+
 
 /**
  * Handles the information needed to be maintained throughout the use of the app
@@ -32,6 +35,7 @@ public class EmailViewModel extends AndroidViewModel {
      * Clears Database by calling clearDatabase method of EmailRepository
      */
     public static void clearDatabase() {
+//        System.out.println("In here clearing");
         emailRepository.clearDatabase();
 
     }
@@ -82,9 +86,8 @@ public class EmailViewModel extends AndroidViewModel {
      *
      * @param userEmail    email of the user
      * @param userPassword password of the user
-     * @param button       startserver button
      */
-    public void init(String userEmail, String userPassword, Button button) {
+    public void init(String userEmail, String userPassword) {
         emailRepository = new EmailRepository(getApplication().getApplicationContext(), userEmail, userPassword);
         emailRepository.init(view);
 
@@ -96,6 +99,18 @@ public class EmailViewModel extends AndroidViewModel {
      */
     public void getAllUids() {
         emailRepository.getAllUids();
+    }
+
+    public void saveUser(String pass, String userName){
+        emailRepository.saveUser(pass,userName);
+    }
+
+    public HashMap<String, String> getUser(){
+        init("","");
+        return emailRepository.getUser();
+    }
+    public void removeUser(){
+        emailRepository.removeUser();
     }
 
 
