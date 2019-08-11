@@ -17,9 +17,12 @@ dependencies {
     implementation 'com.jakewharton:butterknife:9.0.0-rc2'
     annotationProcessor 'com.jakewharton:butterknife-compiler:9.0.0-rc2'
     implementation 'com.makeramen:roundedimageview:2.3.0'
-    implementation 'com.couchbase.lite:couchbase-lite-android-ee:2.0.0'
+    implementation 'com.couchbase.lite:couchbase-lite-android:2.5.3'
     api 'com.google.guava:guava:26.0-android'
     implementation 'com.android.volley:volley:1.1.1'
+
+
+//    implementation 'com.couchbase.lite:couchbase-lite-android:2.5.0'
 
     implementation('net.named-data.jndn-extra:jndn-management:1.2.2') {
         exclude group: 'net.named-data', module: 'jndn'
@@ -28,15 +31,15 @@ dependencies {
         exclude group: 'org.xerial'
         exclude group: 'com.google.android'
     }
-    implementation 'net.named-data.jndn-extra:jndn-xx-util:0.0.2'
-    implementation 'android.arch.lifecycle:extensions:1.1.1'
+        implementation 'net.named-data.jndn-extra:jndn-xx-util:0.0.2'
+        implementation 'android.arch.lifecycle:extensions:1.1.1'
 
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.mockito:mockito-core:2.8.0'
-    testCompile 'org.powermock:powermock-api-mockito2:1.7.0RC2'
-    testCompile 'org.powermock:powermock-module-junit4:1.7.0'
-    testCompile 'org.powermock:powermock-core:1.7.0'
-    testCompile 'org.powermock:powermock-module-junit4-rule:1.7.0'
+        testCompile 'junit:junit:4.12'
+        testCompile 'org.mockito:mockito-core:2.8.0'
+        testCompile 'org.powermock:powermock-api-mockito2:1.7.0RC2'
+        testCompile 'org.powermock:powermock-module-junit4:1.7.0'
+        testCompile 'org.powermock:powermock-core:1.7.0'
+        testCompile 'org.powermock:powermock-module-junit4-rule:1.7.0'
 //    // Required -- JUnit 4 framework
 //    testImplementation 'junit:junit:4.12'
 //    // Optional -- Mockito framework
@@ -45,78 +48,75 @@ dependencies {
 ////    testImplementation "org.powermock:powermock-module-junit4:1.7.4"
 //    testCompile group: 'org.powermock', name: 'powermock-api-mockito', version: '1.7.4'
 ////    implementation 'org.powermock:powermock-core:2.0.2'
-    // Android runner and rules support
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-    androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'androidx.test:rules:1.2.0'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.0'
-    androidTestImplementation 'androidx.test.espresso:espresso-intents:3.1.0'
+        // Android runner and rules support
+        androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+        androidTestImplementation 'androidx.test:runner:1.2.0'
+        androidTestImplementation 'androidx.test:rules:1.2.0'
+        androidTestImplementation 'androidx.test.ext:junit:1.1.0'
+        androidTestImplementation 'androidx.test.espresso:espresso-intents:3.1.0'
 
 
-}
-
-repositories {
-    google()
-    jcenter()
-    mavenCentral()
-    maven {
-        url "http://mobile.maven.couchbase.com/maven2/dev/"
+        implementation 'com.google.android.gms:play-services-auth:16.0.0'
     }
-}
 
-android {
-    compileSdkVersion 28
-    buildToolsVersion '27.0.3'
+    repositories {
+        google()
+        jcenter()
+        mavenCentral()
+    }
 
-    defaultConfig {
-        applicationId "edu.ua.cs.nrl.mailsync"
-        minSdkVersion 23
-        targetSdkVersion 26
-        versionCode 1
-        versionName "1.0"
-        multiDexEnabled true
-        javaCompileOptions {
-            annotationProcessorOptions {
-                includeCompileClasspath true
+    android {
+        compileSdkVersion 28
+        buildToolsVersion '27.0.3'
+
+        defaultConfig {
+            applicationId "edu.ua.cs.nrl.mailsync"
+            minSdkVersion 23
+            targetSdkVersion 26
+            versionCode 1
+            versionName "1.0"
+            multiDexEnabled true
+            javaCompileOptions {
+                annotationProcessorOptions {
+                    includeCompileClasspath true
+                }
             }
-        }
-        compileOptions {
-            sourceCompatibility JavaVersion.VERSION_1_8
-            targetCompatibility JavaVersion.VERSION_1_8
-        }
-        android.defaultConfig.javaCompileOptions.annotationProcessorOptions.includeCompileClasspath = true
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_1_8
+                targetCompatibility JavaVersion.VERSION_1_8
+            }
+            android.defaultConfig.javaCompileOptions.annotationProcessorOptions.includeCompileClasspath = true
 //        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 //        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+            testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-        testOptions {
-            unitTests.includeAndroidResources = true
+            testOptions {
+                unitTests.includeAndroidResources = true
+            }
+
         }
 
-    }
+        buildTypes {
+            release {
+                minifyEnabled false
+                proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            }
+        }
 
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        packagingOptions {
+            pickFirst 'META-INF/LICENSE.txt' // picks the JavaMail license file
+            exclude 'META-INF/mailcap.default'
+            exclude 'META-INF/mimetypes.default'
         }
     }
 
-    packagingOptions {
-        pickFirst 'META-INF/LICENSE.txt' // picks the JavaMail license file
-        exclude 'META-INF/mailcap.default'
-        exclude 'META-INF/mimetypes.default'
-    }
-}
-
-configurations.all {
-    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
-        def requested = details.requested
-        if (requested.group == "com.android.support") {
-            if (!requested.name.startsWith("multidex")) {
-                details.useVersion "26.+"
+    configurations.all {
+        resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+            def requested = details.requested
+            if (requested.group == "com.android.support") {
+                if (!requested.name.startsWith("multidex")) {
+                    details.useVersion "26.+"
+                }
             }
         }
     }
-}
-
