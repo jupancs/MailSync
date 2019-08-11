@@ -80,11 +80,12 @@ public class MainServerFragment extends BaseFragment {
         super.onCreate(savedInstanceState);
 
         emailViewModel = ViewModelProviders.of(getActivity()).get(EmailViewModel.class);
-        android.support.v7.app.ActionBar actionBar
-                = ((AppCompatActivity) getActivity()).getSupportActionBar();
-        ColorDrawable colorDrawable = new ColorDrawable(Color.parseColor("#ffffff"));
-        actionBar.setBackgroundDrawable(colorDrawable);
-        actionBar.setTitle(Html.fromHtml("<font color='#009a68'>MailSync</font>"));
+//        android.support.v7.app.ActionBar actionBar
+//                = ((AppCompatActivity) getActivity()).getSupportActionBar();
+//        ColorDrawable colorDrawable = new ColorDrawable(Color.parseColor("#ffffff"));
+//        actionBar.setBackgroundDrawable(colorDrawable);
+//        actionBar.setTitle(Html.fromHtml("<font color='#009a68'>MailSync</font>"));
+//        actionBar.show();
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
