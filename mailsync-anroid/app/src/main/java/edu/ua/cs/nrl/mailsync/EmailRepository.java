@@ -618,7 +618,7 @@ public class EmailRepository {
     public void shutdownRelayer() {
         if (hasInternetBefore) {
             try {
-                if (relayer.getServerSocket() != null) {
+                if (relayer!=null && relayer.getServerSocket() != null) {
                     relayer.getServerSocket().close();
                 }
             } catch (IOException e) {

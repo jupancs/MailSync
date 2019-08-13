@@ -216,7 +216,7 @@ public class TranslateWorker {
         mimeMessageName = mimeMessageNdnName.toUri();
 
         ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
-        ObjectOutputStream oos2 = new ObjectOutputStream(baos);
+        ObjectOutputStream oos2 = new ObjectOutputStream(baos2);
         byte[] byteArray2;
 
         mimeMessage.writeTo(baos2);
@@ -226,7 +226,7 @@ public class TranslateWorker {
         contentString = BaseEncoding.base64().encode(byteArray2);
 
         // NDN packet upper bound is 8000
-        int messageSize = mimeMessage.getSize();
+        int messageSize = contentString.length();
         int numberOfChunks = messageSize / 4000 + 1;
         int chunkLength = (int) Math.ceil(contentString.length() / (double) numberOfChunks);
         String[] chunks = new String[numberOfChunks];
