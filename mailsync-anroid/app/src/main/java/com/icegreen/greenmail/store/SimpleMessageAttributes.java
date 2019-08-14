@@ -52,6 +52,7 @@ public class SimpleMessageAttributes
     private String bodyStructure;
     private String envelope;
     private int size;
+    private int actualSize;
     private int lineCount;
     public MailMessageAttributes[] parts;
     private List<String> headers;
@@ -81,7 +82,6 @@ public class SimpleMessageAttributes
 
     public SimpleMessageAttributes(MimeMessage msg, Date receivedDate) throws MessagingException {
         Date sentDate = getSentDate(msg, receivedDate);
-
         if(null != receivedDate) {
             this.receivedDate = receivedDate;
             receivedDateString = INTERNALDATE.format(receivedDate);
@@ -94,6 +94,23 @@ public class SimpleMessageAttributes
             parseMimePart(msg);
         }
     }
+
+    public SimpleMessageAttributes(MimeMessage msg, Date receivedDate, int actualSize) throws MessagingException {
+        this.actualSize = actualSize;
+        Date sentDate = getSentDate(msg, receivedDate);
+        if(null != receivedDate) {
+            this.receivedDate = receivedDate;
+            receivedDateString = INTERNALDATE.format(receivedDate);
+        }
+        if(null != sentDate) {
+            sentDateEnvelopeString = new MailDateFormat().format(sentDate);
+        }
+
+        if (msg != null) {
+            parseMimePart(msg);
+        }
+    }
+
 
     /**
      * Compute "sent" date
@@ -636,6 +653,10 @@ public class SimpleMessageAttributes
     @Override
     public String getBodyStructure(boolean includeExtensions) {
         return parseBodyStructure(includeExtensions);
+    }
+
+    public int getActualSize(){
+        return actualSize;
     }
 
 

@@ -1,17 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
-    android:layout_height="match_parent">
-    <ScrollView
-        android:padding="10dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+        <!--<TextView-->
+            <!--android:text="1) Run NFD on Android.\n
+            2) Run MailSynn and click Run button.\n
+            3) Send a new email (not too large) to your testing account and wait for a while (since there is no notification for completing processing,
+            wait a bit longer say 1 min)\n4) Turn the Android hotspot on, cut off the data connection.\n
+            5) Connect your laptop to the Android hotspot.\n6) Run mailsync script,
+            it will automatically fetching emails from Android after starting up.
+            Wait for a while untill no more stuff coming onto the console.\n
+            7) Click the GetMessage button on thunderbird.\n
+            8) You should get the email from your phone.\n"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--/>-->
         <TextView
-            android:text="1) Run NFD on Android.\n2) Run MailSynn and click Run button.\n3) Send a new email (not too large) to your testing account and wait for a while (since there is no notification for completing processing, wait a bit longer say 1 min)\n4) Turn the Android hotspot on, cut off the data connection.\n5) Connect your laptop to the Android hotspot.\n6) Run mailsync script, it will automatically fetching emails from Android after starting up. Wait for a while untill no more stuff coming onto the console.\n7) Click the GetMessage button on thunderbird.\n8) You should get the email from your phone.\n"
+            android:text="Tutorial "
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:textAlignment="center"
+            android:gravity="center"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark"
+            android:textSize="20sp"
+            android:padding="10dp"
+            />
+        <TextView
+            android:text="1) Run NFD on Android."
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
+            android:padding="10dp"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark"
+
+        />
+        <TextView
+            android:text="2) Click the Run Server Button"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark"
+            android:padding="10dp"
+            />
+        <TextView
+            android:text="3) Send a new email (not too large) to your testing account "
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:padding="10dp"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark"
+            />
+        <TextView
+            android:text="4) Wait for all the emails to be stored"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:padding="10dp"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark"
+        />
+        <TextView
+            android:text="5) Turn the Android hotspot on, cut off the data connection."
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:padding="10dp"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark"
+            />
+        <TextView
+            android:text="6) Connect your laptop to the Android hotspot"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:padding="10dp"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark"
+            />
+        <TextView
+            android:text="7) Run the laptop MailSync"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:padding="10dp"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark"
+            />
+        <TextView
+            android:text="8) Wait for the mobile progress bar to reach 100%"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:padding="10dp"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark"
+            />
+        <TextView
+            android:text="9) Click the GetMessage button on thunderbird."
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:padding="10dp"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark"
+            />
+        <TextView
+            android:text="10) Your emails should be on your laptop!"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:padding="10dp"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark"
             />
 
-    </ScrollView>
 
 </LinearLayout>

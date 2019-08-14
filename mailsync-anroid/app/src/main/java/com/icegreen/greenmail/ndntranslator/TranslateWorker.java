@@ -49,27 +49,7 @@ public class TranslateWorker {
         Name certificateName = ExternalProxy.ndnMailSyncOneThread.certificateName_;
 
 
-        /**
-         * Deal with attributes
-         *
-         */
-        String attributeName = ndnTranslator.generateAttributeName(
-                "mailSync",
-                ExternalProxy.userEmail,
-                "inbox",
-                "1",
-                String.valueOf(mimeMessageID)
-        );
-        System.out.println("Attribute Name " + attributeName);
-        Name attributeNdnName = new Name(attributeName);
-        attributeName = attributeNdnName.toUri();
 
-        byte[] attributeData = ndnTranslator.encodeAttribute(
-                new SimpleMessageAttributes(mimeMessage, mimeMessage.getReceivedDate()), attributeNdnName
-        );
-
-        ndnTranslator.saveData(attributeName, attributeData, "Attribute");
-        Log.d(TAG, "Attribute Saved " + attributeName);
 
         /**
          * Deal with MailFolder
@@ -255,6 +235,27 @@ public class TranslateWorker {
 //            Log.d(TAG, "Mimemessage Saved " + mimeMessageName);
 
         }
+        /**
+         * Deal with attributes
+         *
+         */
+        String attributeName = ndnTranslator.generateAttributeName(
+                "mailSync",
+                ExternalProxy.userEmail,
+                "inbox",
+                "1",
+                String.valueOf(mimeMessageID)
+        );
+        System.out.println("Attribute Name " + attributeName);
+        Name attributeNdnName = new Name(attributeName);
+        attributeName = attributeNdnName.toUri();
+
+        byte[] attributeData = ndnTranslator.encodeAttribute(
+                new SimpleMessageAttributes(mimeMessage, mimeMessage.getReceivedDate(), contentString.length()), attributeNdnName
+        );
+
+        ndnTranslator.saveData(attributeName, attributeData, "Attribute");
+        Log.d(TAG, "Attribute Saved " + attributeName);
 
 //        System.out.println("Saved Email with UID: " + uid);
         emailRepository.getAllUids();
