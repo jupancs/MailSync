@@ -51,7 +51,7 @@
                     android:padding="10dp"
                     />
                 <TextView
-                    android:text="3) Send a new email (not too large) to your testing account "
+                    android:text="3) Send a new email to your testing account "
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"
                     android:padding="10dp"
