@@ -818,6 +818,8 @@ public class EmailRepository {
         editor.putString("pass",pass);
         editor.putString("userName",userName);
         editor.apply();
+//        Log.d(TAG, "Username saved" + userName + "Pass saved" + pass);
+//        Log.d(TAG, "User in SP" + sharedPreferences.getString("userName","") + "Pass in SP" + sharedPreferences.getString("pass",""));
     }
 
     /**
@@ -834,7 +836,7 @@ public class EmailRepository {
         sharedPreferences = context.getSharedPreferences("User",0);
         String name = sharedPreferences.getString("userName","");
         String pass = sharedPreferences.getString("pass","");
-        Log.d("Remove","Remove User" + name + pass);
+//        Log.d("Remove","Remove User" + name + pass);
 
         hmap.clear();
     }
@@ -853,6 +855,7 @@ public class EmailRepository {
         }
         hmap.put("name",name);
         hmap.put("pass",pass);
+//        Log.d(TAG, "Username go" + hmap.get("name") + "Pass got" + hmap.get("pass"));
         return hmap;
     }
 

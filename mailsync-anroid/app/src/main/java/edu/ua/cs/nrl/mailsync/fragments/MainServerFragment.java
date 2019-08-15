@@ -27,6 +27,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 
+import java.util.HashMap;
+
 import javax.mail.Message;
 
 import butterknife.BindView;
@@ -254,25 +256,42 @@ public class MainServerFragment extends BaseFragment {
             Button dialogButton = (Button) dialog.findViewById(R.id.btnLogin);
             EditText editText = dialog.findViewById(R.id.etPassword);
             // if button is clicked, close the custom dialog
-            dialogButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    EditText editText = dialog.findViewById(R.id.etPassword);
-                    System.out.println("Edit text " + editText);
-                    if (editText!= null) {
-                        emailViewModel.getPassword().setValue(String.valueOf(editText.getText()));
-                        emailViewModel.init(userEmail, userPassword);
-                        Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
-                        emailViewModel.startServer(userEmail, userPassword);
-                        Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
-                        serverStatus.setText(getString(R.string.running));
+            HashMap<String, String> hmap = emailViewModel.getUser();
+            if(hmap==null||hmap.get("pass")==null ||hmap.get("name")==null|| hmap.get("pass").equals("") || hmap.get("name").equals("")){
+                dialogButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        EditText editText = dialog.findViewById(R.id.etPassword);
+                        System.out.println("Edit text " + editText);
+
+                        if (editText!= null) {
+                            emailViewModel.getPassword().setValue(String.valueOf(editText.getText()));
+                            emailViewModel.getEmail().setValue(account.getEmail());
+                            System.out.println("Dialog saved" + userEmail + userPassword);
+                            emailViewModel.init(userEmail, userPassword);
+                            Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
+                            emailViewModel.startServer(userEmail, userPassword);
+                            emailViewModel.saveUser(userPassword,userEmail);
+                            Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
+                            serverStatus.setText(getString(R.string.running));
+                        }
+
+                        dialog.dismiss();
                     }
+                });
 
-                    dialog.dismiss();
-                }
-            });
+                dialog.show();
+            } else {
+                userPassword = hmap.get("pass");
+                userEmail = hmap.get("name");
+                emailViewModel.getPassword().setValue(String.valueOf(userPassword));
+                emailViewModel.init(userEmail, userPassword);
+                Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
+                emailViewModel.startServer(userEmail, userPassword);
+                Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
+                serverStatus.setText(getString(R.string.running));
+            }
 
-            dialog.show();
 
         }
         else{
