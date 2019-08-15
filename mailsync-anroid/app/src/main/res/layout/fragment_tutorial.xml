@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -17,98 +18,125 @@
             <!--android:layout_height="wrap_content"-->
             <!--android:layout_width="wrap_content"-->
             <!--/>-->
-        <TextView
-            android:text="Tutorial "
-            android:layout_height="wrap_content"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:textAlignment="center"
-            android:gravity="center"
-            android:textStyle="bold"
-            android:textColor="@color/colorPrimaryDark"
-            android:textSize="20sp"
-            android:padding="10dp"
-            />
-        <TextView
-            android:text="1) Run NFD on Android."
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:padding="10dp"
-            android:textStyle="bold"
-            android:textColor="@color/colorPrimaryDark"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+                <TextView
+                    android:text="Tutorial "
+                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:textAlignment="center"
+                    android:gravity="center"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimaryDark"
+                    android:textSize="20sp"
+                    android:padding="10dp"
+                    />
+                <TextView
+                    android:text="1) Run NFD on Android."
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:padding="10dp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimaryDark"
 
-        />
-        <TextView
-            android:text="2) Click the Run Server Button"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:textStyle="bold"
-            android:textColor="@color/colorPrimaryDark"
-            android:padding="10dp"
-            />
-        <TextView
-            android:text="3) Send a new email (not too large) to your testing account "
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:padding="10dp"
-            android:textStyle="bold"
-            android:textColor="@color/colorPrimaryDark"
-            />
-        <TextView
-            android:text="4) Wait for all the emails to be stored"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:padding="10dp"
-            android:textStyle="bold"
-            android:textColor="@color/colorPrimaryDark"
-        />
-        <TextView
-            android:text="5) Turn the Android hotspot on, cut off the data connection."
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:padding="10dp"
-            android:textStyle="bold"
-            android:textColor="@color/colorPrimaryDark"
-            />
-        <TextView
-            android:text="6) Connect your laptop to the Android hotspot"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:padding="10dp"
-            android:textStyle="bold"
-            android:textColor="@color/colorPrimaryDark"
-            />
-        <TextView
-            android:text="7) Run the laptop MailSync"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:padding="10dp"
-            android:textStyle="bold"
-            android:textColor="@color/colorPrimaryDark"
-            />
-        <TextView
-            android:text="8) Wait for the mobile progress bar to reach 100%"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:padding="10dp"
-            android:textStyle="bold"
-            android:textColor="@color/colorPrimaryDark"
-            />
-        <TextView
-            android:text="9) Click the GetMessage button on thunderbird."
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:padding="10dp"
-            android:textStyle="bold"
-            android:textColor="@color/colorPrimaryDark"
-            />
-        <TextView
-            android:text="10) Your emails should be on your laptop!"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:padding="10dp"
-            android:textStyle="bold"
-            android:textColor="@color/colorPrimaryDark"
-            />
+                    />
+                <TextView
+                    android:text="2) Click the Run Server Button"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimaryDark"
+                    android:padding="10dp"
+                    />
+                <TextView
+                    android:text="3) Send a new email (not too large) to your testing account "
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:padding="10dp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimaryDark"
+                    />
+                <TextView
+                    android:text="4) Wait for all the emails to be stored"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:padding="10dp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimaryDark"
+                    />
+                <TextView
+                    android:text="5) Turn the Android hotspot on, cut off the data connection."
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:padding="10dp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimaryDark"
+                    />
+                <TextView
+                    android:text="6) Connect your laptop to the Android hotspot"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:padding="10dp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimaryDark"
+                    />
+                <TextView
+                    android:text="7) Run the laptop MailSync"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:padding="10dp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimaryDark"
+                    />
+                <TextView
+                    android:text="8) Wait for the mobile progress bar to reach 100%"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:padding="10dp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimaryDark"
+                    />
+                <TextView
+                    android:text="9) Click the GetMessage button on thunderbird."
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:padding="10dp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimaryDark"
+                    />
+                <TextView
+                    android:text="10) Your emails should be on your laptop!"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:padding="10dp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimaryDark"/>
+                <TextView
+                    android:text="For more details please visit"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:padding="10dp"
+                    android:layout_marginTop="20dp"
+                    android:textStyle="bold"
+                    android:layout_gravity="center"
+                    android:textColor="@color/colorPrimaryDark"
+                    />
+
+                <TextView
+                    android:text="www.github.com/jupancs/mailSync"
+                    android:autoLink="web"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:padding="10dp"
+                    android:textStyle="bold"
+                    android:layout_gravity="center"
+                    android:textColor="@color/colorPrimaryDark"
+                    />
+
+        </LinearLayout>
 
 
-</LinearLayout>
+
+</ScrollView>
