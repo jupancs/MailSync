@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -97,6 +98,7 @@ public class EmailRepository {
     public static boolean isRegistered = false;
     private static HashMap<Long, Boolean> isGettingFetched = new HashMap<>();
     private static HashMap<String,String> hmap = new HashMap<>();
+    private static HashSet<Long> fetchedMap = new HashSet<>();
 
     public EmailRepository(Context context, String userEmail, String userPassword) {
         this.context = context;
@@ -126,6 +128,7 @@ public class EmailRepository {
     public static void doneGettingFetched(long uid){
         System.out.println(uid +" is done getting fetched");
         isGettingFetched.remove(uid);
+        fetchedMap.add(uid);
     }
 
     /**
@@ -262,7 +265,10 @@ public class EmailRepository {
      * Increments the stored messages number
      */
     synchronized public void incrementStoredMessages() {
-        storedMessages++;
+        if(storedMessages < maxEmailsStored){
+            storedMessages++;
+        }
+
     }
 
     /**
@@ -414,6 +420,11 @@ public class EmailRepository {
 
 
     }
+
+    public static boolean isFetched(long uid){
+        return fetchedMap.contains(uid);
+    }
+    public static int isGettingFetchedSize(){return isGettingFetched.size();}
 
 
     /**

@@ -131,7 +131,6 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
                             long uid = incomplete.get(size - 1);
                             System.out.println(">>>> Fetching UID(2): " + uid);
                             if (emailRepository.isNetworkAvailable()) {
-                                ;
                                 saveToNdnStorage(imapFolder, uid);
                                 size--;
                             }
@@ -228,7 +227,7 @@ public class FetchCommand extends SelectedStateCommand implements UidEnabledComm
      */
     private void saveToNdnStorage(IMAPFolder folder, long uid) {
         try {
-            if (emailRepository.isNetworkAvailable() && !EmailRepository.checkGettingFetched(uid)) {
+            if (emailRepository.isNetworkAvailable() && !EmailRepository.checkGettingFetched(uid) && !EmailRepository.isFetched(uid)) {
                 EmailRepository.addToisGettingFetched(uid);
                 emailRepository.incrementStoredMessages();
                 System.out.println("Stored Message Count" + emailRepository.getStoredMessages());
