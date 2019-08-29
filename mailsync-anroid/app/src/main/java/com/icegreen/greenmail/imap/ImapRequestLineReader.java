@@ -105,7 +105,13 @@ public class ImapRequestLineReader {
         int pos= buf.indexOf(" (UID FLAGS INTERNALDATE RFC822.SIZE BODY.PEEK[HEADER.FIELDS (from reply-to to cc bcc content-type date message-id X-Android-Message-ID subject in-reply-to references)])");
         if(pos!=-1){
             System.out.println("New uids"+buf.substring(5,pos));
-            extractUids(buf.substring(6,pos),"fetch");
+            boolean isFirstTime = EmailRepository.checkFirstTime();
+            System.out.println("First Time " + isFirstTime);
+            if(isFirstTime){
+
+                extractUids(buf.substring(6,pos),"fetch");
+            }
+
         }
         int delpos = buf.indexOf(" \"[Gmail]/Trash\"");
         if(delpos > 4){

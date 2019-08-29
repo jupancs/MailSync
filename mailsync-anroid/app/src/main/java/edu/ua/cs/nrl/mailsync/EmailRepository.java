@@ -99,6 +99,7 @@ public class EmailRepository {
     private static HashMap<Long, Boolean> isGettingFetched = new HashMap<>();
     private static HashMap<String,String> hmap = new HashMap<>();
     private static HashSet<Long> fetchedMap = new HashSet<>();
+    private static boolean isFetchingFirstTime = false;
 
     public EmailRepository(Context context, String userEmail, String userPassword) {
         this.context = context;
@@ -138,7 +139,7 @@ public class EmailRepository {
      * @return
      */
     public static boolean checkGettingFetched(long uid){
-        System.out.println(uid +" is getting fetched" + isGettingFetched.get(uid));
+//        System.out.println(uid +" is getting fetched" + isGettingFetched.get(uid));
         if(isGettingFetched.get(uid)==null){
             return false;
         }
@@ -833,6 +834,21 @@ public class EmailRepository {
 //        Log.d(TAG, "User in SP" + sharedPreferences.getString("userName","") + "Pass in SP" + sharedPreferences.getString("pass",""));
     }
 
+    public static boolean checkFirstTime(){
+        sharedPreferences = context.getSharedPreferences("User",0);
+        SharedPreferences.Editor editor= sharedPreferences.edit();
+        boolean isFirstTime = sharedPreferences.getBoolean("first",false);
+
+        if(!isFirstTime) {
+            editor.putBoolean("first", true);
+        }
+        editor.apply();
+        System.out.println("CheckFirstTimeinER " + isFirstTime);
+        return isFirstTime;
+    }
+
+
+
     /**
      * Removes user from the app by removing the account from the shared preference
      */
@@ -841,6 +857,7 @@ public class EmailRepository {
         SharedPreferences.Editor editor= sharedPreferences.edit();
         editor.remove("pass");
         editor.remove("userName");
+        editor.remove("first");
         editor.clear();
         editor.commit();
 
