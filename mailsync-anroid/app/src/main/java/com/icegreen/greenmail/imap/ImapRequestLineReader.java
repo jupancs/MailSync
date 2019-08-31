@@ -137,19 +137,27 @@ public class ImapRequestLineReader {
     public void extractUids(String a, String function) {
         emailRepository = new EmailRepository();
         String s = new String (a);
-        if(function.equals("fetch")){ String[]dig=s.split(",");
-            System.out.println("This is the string to extract uid from " + a);
-            int numOfEmails=0;
-            for(String i: dig){
-                numOfEmails++;
-                if(android.text.TextUtils.isDigitsOnly(i)){
-                    Long uid = Long.parseLong(i);
-                    emailRepository.addIncompleteUids(uid);
-                    System.out.println("This uid is added :" + uid);
+        if(function.equals("fetch")){
+            String[]dig=s.split(",");
+            if(dig.length > 50){
+                System.out.println("Cant store " + dig.length + " many emails");
+                return;
+            } else {
+                System.out.println("This is the string to extract uid from " + a);
+                int numOfEmails=0;
+                for(String i: dig){
+                    numOfEmails++;
+                    if(android.text.TextUtils.isDigitsOnly(i)){
+                        Long uid = Long.parseLong(i);
+                        emailRepository.addIncompleteUids(uid);
+                        System.out.println("This uid is added :" + uid);
+                    }
                 }
+                EmailRepository.maxEmailsStored +=numOfEmails;
             }
 
-            EmailRepository.maxEmailsStored +=numOfEmails;
+
+
         } else if (function.equals("delete")) {
             System.out.println("In the process of deleting " + a);
             if(android.text.TextUtils.isDigitsOnly(a)){
