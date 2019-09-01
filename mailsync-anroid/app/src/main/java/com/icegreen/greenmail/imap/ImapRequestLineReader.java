@@ -138,7 +138,7 @@ public class ImapRequestLineReader {
         String s = new String (a);
         if(function.equals("fetch")){
             String[]dig=s.split(",");
-            if(dig.length > 10){
+            if(dig.length > 50){
                 System.out.println("Cant store " + dig.length + " many emails");
                 return;
             } else {
