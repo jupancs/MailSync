@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.internet.*;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -29,12 +30,12 @@ import java.util.*;
  * Reference: RFC 2060 - para 2.3 https://www.ietf.org/rfc/rfc2060.txt
  *
  * @author <a href="mailto:sascha@kulawik.de">Sascha Kulawik</a>
- * @author <a href="mailto:charles@benett1.demon.co.uk">Charles Benett</a>
+ * @author <a href="mailto:charles@benett1.demon.co.uk">Charles Benett</a>f
  * @version 0.2 on 04 Aug 2002
  */
 public class SimpleMessageAttributes
         implements MailMessageAttributes, Serializable {
-  private static final long serialVersionUID = 6529685098267757690L;
+    private static final long serialVersionUID = 6529685098267757690L;
     // Logging.
     protected final Logger log = LoggerFactory.getLogger(getClass());
     private static final String SP = " ";
@@ -51,6 +52,7 @@ public class SimpleMessageAttributes
     private String bodyStructure;
     private String envelope;
     private int size;
+    private int actualSize;
     private int lineCount;
     public MailMessageAttributes[] parts;
     private List<String> headers;
@@ -78,9 +80,8 @@ public class SimpleMessageAttributes
     private String sentDateEnvelopeString;
     private Header contentDisposition;
 
-    SimpleMessageAttributes(MimeMessage msg, Date receivedDate) throws MessagingException {
+    public SimpleMessageAttributes(MimeMessage msg, Date receivedDate) throws MessagingException {
         Date sentDate = getSentDate(msg, receivedDate);
-
         if(null != receivedDate) {
             this.receivedDate = receivedDate;
             receivedDateString = INTERNALDATE.format(receivedDate);
@@ -93,6 +94,23 @@ public class SimpleMessageAttributes
             parseMimePart(msg);
         }
     }
+
+    public SimpleMessageAttributes(MimeMessage msg, Date receivedDate, int actualSize) throws MessagingException {
+        this.actualSize = actualSize;
+        Date sentDate = getSentDate(msg, receivedDate);
+        if(null != receivedDate) {
+            this.receivedDate = receivedDate;
+            receivedDateString = INTERNALDATE.format(receivedDate);
+        }
+        if(null != sentDate) {
+            sentDateEnvelopeString = new MailDateFormat().format(sentDate);
+        }
+
+        if (msg != null) {
+            parseMimePart(msg);
+        }
+    }
+
 
     /**
      * Compute "sent" date
@@ -126,6 +144,7 @@ public class SimpleMessageAttributes
      * TODO this is a mess, and should be completely revamped.
      */
     void parseMimePart(MimePart part) throws MessagingException {
+//        size = GreenMailUtil.getBody(part).length();
         final String body = GreenMailUtil.getBody(part);
         size = body.length();
 
@@ -225,6 +244,7 @@ public class SimpleMessageAttributes
 
         try {
             // TODO this doesn't work
+//            lineCount = getLineCount(part);
             lineCount = GreenMailUtil.getLineCount(body);
         } catch (Exception e) {
             if (log.isDebugEnabled()) {
@@ -633,6 +653,10 @@ public class SimpleMessageAttributes
     @Override
     public String getBodyStructure(boolean includeExtensions) {
         return parseBodyStructure(includeExtensions);
+    }
+
+    public int getActualSize(){
+        return actualSize;
     }
 
 

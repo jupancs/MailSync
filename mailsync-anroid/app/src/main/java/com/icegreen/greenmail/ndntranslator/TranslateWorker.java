@@ -49,27 +49,7 @@ public class TranslateWorker {
         Name certificateName = ExternalProxy.ndnMailSyncOneThread.certificateName_;
 
 
-        /**
-         * Deal with attributes
-         *
-         */
-        String attributeName = ndnTranslator.generateAttributeName(
-                "mailSync",
-                ExternalProxy.userEmail,
-                "inbox",
-                "1",
-                String.valueOf(mimeMessageID)
-        );
-        System.out.println("Attribute Name " + attributeName);
-        Name attributeNdnName = new Name(attributeName);
-        attributeName = attributeNdnName.toUri();
 
-        byte[] attributeData = ndnTranslator.encodeAttribute(
-                new SimpleMessageAttributes(mimeMessage, mimeMessage.getReceivedDate()), attributeNdnName
-        );
-
-        ndnTranslator.saveData(attributeName, attributeData, "Attribute");
-        Log.d(TAG, "Attribute Saved " + attributeName);
 
         /**
          * Deal with MailFolder
@@ -100,17 +80,17 @@ public class TranslateWorker {
         System.out.println(" Ding Ding");
         Snapshot snapshot = NdnFolder.getSnapshot();
         oos.writeObject(snapshot);
-        Log.d(TAG,"Exists" + snapshot.exists + "Recent Count" + snapshot.recent + "UidValidity" +snapshot.uidvalidity + "Uidnext"
-                +snapshot.uidnext + "\n" + "First unseen" + snapshot.unseen + "Size" +snapshot.size + "Last Size" + NdnFolder.lastSize
-                + "Sync number" + snapshot.syncAmount + "Sync Checkpoint" +snapshot.syncCheckpoint + "InitSize" +snapshot.initSize + "MessageID" +  mimeMessageID);
-        Log.d(TAG,"MessageUID List");
+//        Log.d(TAG,"Exists" + snapshot.exists + "Recent Count" + snapshot.recent + "UidValidity" +snapshot.uidvalidity + "Uidnext"
+//                +snapshot.uidnext + "\n" + "First unseen" + snapshot.unseen + "Size" +snapshot.size + "Last Size" + NdnFolder.lastSize
+//                + "Sync number" + snapshot.syncAmount + "Sync Checkpoint" +snapshot.syncCheckpoint + "InitSize" +snapshot.initSize + "MessageID" +  mimeMessageID);
+//        Log.d(TAG,"MessageUID List");
         for(Long num: NdnFolder.messageUidList){
             Log.d(TAG, " " + num);
         }
-        Log.d(TAG,"MessageID List");
-        for(String string: NdnFolder.messgeID){
-            Log.d(TAG, " " + string);
-        }
+//        Log.d(TAG,"MessageID List");
+//        for(String string: NdnFolder.messgeID){
+//            Log.d(TAG, " " + string);
+//        }
         System.out.println("messageUids size: : : : : " + NdnFolder.messageUidList.size());
         System.out.println(" Da Da");
         System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^");
@@ -216,7 +196,7 @@ public class TranslateWorker {
         mimeMessageName = mimeMessageNdnName.toUri();
 
         ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
-        ObjectOutputStream oos2 = new ObjectOutputStream(baos);
+        ObjectOutputStream oos2 = new ObjectOutputStream(baos2);
         byte[] byteArray2;
 
         mimeMessage.writeTo(baos2);
@@ -226,7 +206,7 @@ public class TranslateWorker {
         contentString = BaseEncoding.base64().encode(byteArray2);
 
         // NDN packet upper bound is 8000
-        int messageSize = mimeMessage.getSize();
+        int messageSize = contentString.length();
         int numberOfChunks = messageSize / 4000 + 1;
         int chunkLength = (int) Math.ceil(contentString.length() / (double) numberOfChunks);
         String[] chunks = new String[numberOfChunks];
@@ -255,8 +235,29 @@ public class TranslateWorker {
 //            Log.d(TAG, "Mimemessage Saved " + mimeMessageName);
 
         }
+        /**
+         * Deal with attributes
+         *
+         */
+        String attributeName = ndnTranslator.generateAttributeName(
+                "mailSync",
+                ExternalProxy.userEmail,
+                "inbox",
+                "1",
+                String.valueOf(mimeMessageID)
+        );
+        System.out.println("Attribute Name " + attributeName);
+        Name attributeNdnName = new Name(attributeName);
+        attributeName = attributeNdnName.toUri();
 
-        System.out.println("Saved Email with UID: " + uid);
+        byte[] attributeData = ndnTranslator.encodeAttribute(
+                new SimpleMessageAttributes(mimeMessage, mimeMessage.getReceivedDate(), contentString.length()), attributeNdnName
+        );
+
+        ndnTranslator.saveData(attributeName, attributeData, "Attribute");
+        Log.d(TAG, "Attribute Saved " + attributeName);
+
+//        System.out.println("Saved Email with UID: " + uid);
         emailRepository.getAllUids();
         emailRepository.notifyStorageCompletion();
         emailRepository.removeIncompleteUids(uid);

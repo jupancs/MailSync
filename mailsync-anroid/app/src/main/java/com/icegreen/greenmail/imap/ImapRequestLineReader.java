@@ -105,7 +105,12 @@ public class ImapRequestLineReader {
         int pos= buf.indexOf(" (UID FLAGS INTERNALDATE RFC822.SIZE BODY.PEEK[HEADER.FIELDS (from reply-to to cc bcc content-type date message-id X-Android-Message-ID subject in-reply-to references)])");
         if(pos!=-1){
             System.out.println("New uids"+buf.substring(5,pos));
-            extractUids(buf.substring(6,pos),"fetch");
+            boolean isFirstTime = EmailRepository.checkFirstTime();
+            System.out.println("First Time " + isFirstTime);
+            if(isFirstTime){
+                extractUids(buf.substring(6,pos),"fetch");
+            }
+
         }
         int delpos = buf.indexOf(" \"[Gmail]/Trash\"");
         if(delpos > 4){
@@ -131,19 +136,27 @@ public class ImapRequestLineReader {
     public void extractUids(String a, String function) {
         emailRepository = new EmailRepository();
         String s = new String (a);
-        if(function.equals("fetch")){ String[]dig=s.split(",");
-            System.out.println("This is the string to extract uid from " + a);
-            int numOfEmails=0;
-            for(String i: dig){
-                numOfEmails++;
-                if(android.text.TextUtils.isDigitsOnly(i)){
-                    Long uid = Long.parseLong(i);
-                    emailRepository.addIncompleteUids(uid);
-                    System.out.println("This uid is added :" + uid);
+        if(function.equals("fetch")){
+            String[]dig=s.split(",");
+            if(dig.length > 50){
+                System.out.println("Cant store " + dig.length + " many emails");
+                return;
+            } else {
+                System.out.println("This is the string to extract uid from " + a);
+                int numOfEmails=0;
+                for(String i: dig){
+                    numOfEmails++;
+                    if(android.text.TextUtils.isDigitsOnly(i)){
+                        Long uid = Long.parseLong(i);
+                        emailRepository.addIncompleteUids(uid);
+                        System.out.println("This uid is added :" + uid);
+                    }
                 }
+                EmailRepository.maxEmailsStored +=numOfEmails;
             }
 
-            EmailRepository.maxEmailsStored +=numOfEmails;
+
+
         } else if (function.equals("delete")) {
             System.out.println("In the process of deleting " + a);
             if(android.text.TextUtils.isDigitsOnly(a)){

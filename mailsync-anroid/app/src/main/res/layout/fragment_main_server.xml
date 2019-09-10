@@ -1,38 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<android.support.constraint.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#ffffff"
+    android:padding="10dp"
     >
 
-    <RelativeLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/email_box"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:padding="15dp"
         android:background="@drawable/background_round"
+        app:layout_constraintBottom_toTopOf="@id/run_nfd"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         >
 
-        <RelativeLayout
-            android:id="@+id/icon_relativelayout"
-            xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="55dp"
-            android:layout_height="55dp"
+        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:app="http://schemas.android.com/apk/res-auto"
-            >
+            android:id="@+id/icon_relativelayout"
+            android:layout_width="55dp"
+            android:layout_height="55dp">
 
             <ImageView
                 android:id="@+id/icon_image"
                 android:layout_width="55dp"
                 android:layout_height="55dp"
-                android:scaleType="center"
-                android:layout_alignParentLeft="true"
                 android:layout_alignParentStart="true"
+                android:layout_alignParentLeft="true"
+                android:scaleType="center"
                 android:src="#D32F2F" />
 
             <TextView
@@ -46,36 +46,34 @@
                 android:layout_margin="1dp"
                 android:gravity="center"
                 android:text="E"
-                android:textSize="40sp"
-                android:textColor="#ffffff" />
+                android:textColor="#ffffff"
+                android:textSize="40sp" />
         </RelativeLayout>
 
         <TextView
             android:id="@+id/email_account"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Ju Pan"
-            android:layout_toEndOf="@+id/icon_relativelayout"
-            android:layout_toRightOf="@+id/icon_relativelayout"
             android:layout_marginStart="10dp"
             android:layout_marginLeft="10dp"
-            android:textSize="16sp"
-            android:textStyle="bold"
             android:layout_marginTop="10dp"
-            />
+            android:layout_toEndOf="@+id/icon_relativelayout"
+            android:layout_toRightOf="@+id/icon_relativelayout"
+            android:text="Ju Pan"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/email_description"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Hello, it's me."
-            android:layout_toEndOf="@+id/icon_relativelayout"
-            android:layout_toRightOf="@+id/icon_relativelayout"
             android:layout_below="@+id/email_account"
             android:layout_marginStart="10dp"
             android:layout_marginLeft="10dp"
-            android:textSize="12sp"
-            />
+            android:layout_toEndOf="@+id/icon_relativelayout"
+            android:layout_toRightOf="@+id/icon_relativelayout"
+            android:text="Hello, it's me."
+            android:textSize="12sp" />
 
     </RelativeLayout>
 
@@ -109,29 +107,32 @@
         android:layout_width="150dp"
         android:layout_height="40dp"
         android:background="@drawable/fetch_background"
-        android:layout_gravity="center"
-        android:layout_marginTop="80dp"
-        android:layout_marginLeft="50dp"
-        android:layout_marginRight="50dp"
         android:textSize="17sp"
         android:text="Run NFD"
         android:textStyle="bold"
         android:textColor="#ffffff"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="10dp"
+        app:layout_constraintTop_toBottomOf="@id/email_box"
+        app:layout_constraintBottom_toTopOf="@id/run_server"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
         />
 
     <Button
         android:id="@+id/run_server"
         android:layout_width="150dp"
         android:layout_height="40dp"
+        android:layout_margin="10dp"
         android:background="@drawable/fetch_background"
-        android:layout_gravity="center"
-        android:layout_marginTop="80dp"
-        android:layout_marginLeft="50dp"
-        android:layout_marginRight="50dp"
         android:textSize="17sp"
         android:text="Run Server"
         android:textStyle="bold"
         android:textColor="#ffffff"
+        app:layout_constraintTop_toBottomOf="@id/run_nfd"
+        app:layout_constraintBottom_toTopOf="@id/btn_clear_database"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
         />
 
     <!--<Button-->
@@ -153,62 +154,118 @@
         android:id="@+id/btn_clear_database"
         android:layout_width="150dp"
         android:layout_height="40dp"
+        android:layout_margin="10dp"
         android:background="@drawable/clear_background"
         android:layout_gravity="center"
-        android:layout_marginTop="30dp"
-        android:layout_marginLeft="50dp"
-        android:layout_marginRight="50dp"
         android:text="Clear All"
         android:textColor="#ffffff"
         android:textSize="17sp"
         android:textStyle="bold"
+        app:layout_constraintTop_toBottomOf="@id/run_server"
+        app:layout_constraintBottom_toTopOf="@id/server_status"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
         />
 
     <TextView
         android:id="@+id/server_status"
-        android:layout_width="wrap_content"
-        android:layout_height="28dp"
-        android:layout_gravity="center"
+        android:layout_width="150dp"
+        android:layout_height="40dp"
         android:background="@drawable/btn_main_server_background"
+        android:gravity="center"
         android:text="Server IDEL"
-        android:layout_marginLeft="100dp"
-        android:layout_marginRight="100dp"
-        android:layout_marginTop="60dp"
         android:textColor="@color/colorPrimary"
         android:textStyle="bold"
-        android:textSize="20sp"
-        android:paddingRight="20dp"
-        android:paddingLeft="20dp" />
+        android:textSize="17sp"
+        app:layout_constraintTop_toBottomOf="@id/btn_clear_database"
+        app:layout_constraintBottom_toTopOf="@id/download_bar"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        />
+    <!--<TextView-->
+        <!--android:id="@+id/server_status"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="Time is precious, so love now."-->
+        <!--android:gravity="center"-->
+        <!--android:textSize="30dp"-->
+        <!--android:textColor="#463D3D"-->
+        <!--android:background="@drawable/btn_main_server_background"-->
+        <!--app:layout_constraintTop_toBottomOf="@id/btn_clear_database"-->
+        <!--app:layout_constraintBottom_toTopOf="@id/download_bar"-->
+        <!--app:layout_constraintRight_toRightOf="parent"-->
+        <!--app:layout_constraintLeft_toLeftOf="parent"-->
+        <!--/>-->
 
+    <Button
+        android:id="@+id/sign_out"
+        android:layout_width="150dp"
+        android:layout_height="40dp"
+        android:layout_gravity="center"
+        android:text="SignOut"
+        android:layout_margin="10dp"
+        android:textColor="#ffffff"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        android:background="@drawable/clear_background"
+        app:layout_constraintTop_toBottomOf="@id/storage_info"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
 
     <ProgressBar
         android:id="@+id/download_bar"
         style="?android:attr/progressBarStyleHorizontal"
-        android:layout_marginTop="20dp"
-        android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="30dp"
+        android:layout_margin="10dp"
+        android:progressBackgroundTint="@color/colorPrimary"
+        android:minHeight="30dp"
+        android:maxHeight="30dp"
+        app:layout_constraintTop_toBottomOf="@id/server_status"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/storage_info"
+
+    />
     <LinearLayout
-        android:layout_marginTop="20dp"
-        android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp"
+        android:id="@+id/storage_info"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="40dp"
+        android:layout_margin="10dp"
+        app:layout_constraintTop_toBottomOf="@id/download_bar"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/sign_out"
+        android:background="@drawable/btn_main_server_background"
         android:orientation="horizontal">
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_weight="1"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="Number of emails Stored "/>
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:padding="5dp"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark"
+            android:text="Stored Emails"/>
+        <View style="@style/Divider.Vertical"/>
+
         <TextView
+            android:layout_weight="1"
             android:id="@+id/stored_emails"
-            android:paddingLeft="10dp"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            />
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:padding="5dp"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark"
+            android:text="0" />
     </LinearLayout>
 
 
 
 
-</LinearLayout>
+</android.support.constraint.ConstraintLayout>

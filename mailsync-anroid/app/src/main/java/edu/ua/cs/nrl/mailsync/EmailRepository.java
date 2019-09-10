@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -96,6 +97,9 @@ public class EmailRepository {
     public static HashMap<Long, Flags> flagsMap = new HashMap<>();
     public static boolean isRegistered = false;
     private static HashMap<Long, Boolean> isGettingFetched = new HashMap<>();
+    private static HashMap<String,String> hmap = new HashMap<>();
+    private static HashSet<Long> fetchedMap = new HashSet<>();
+    private static boolean isFetchingFirstTime = false;
 
     public EmailRepository(Context context, String userEmail, String userPassword) {
         this.context = context;
@@ -125,6 +129,7 @@ public class EmailRepository {
     public static void doneGettingFetched(long uid){
         System.out.println(uid +" is done getting fetched");
         isGettingFetched.remove(uid);
+        fetchedMap.add(uid);
     }
 
     /**
@@ -134,7 +139,7 @@ public class EmailRepository {
      * @return
      */
     public static boolean checkGettingFetched(long uid){
-        System.out.println(uid +" is getting fetched" + isGettingFetched.get(uid));
+//        System.out.println(uid +" is getting fetched" + isGettingFetched.get(uid));
         if(isGettingFetched.get(uid)==null){
             return false;
         }
@@ -261,7 +266,10 @@ public class EmailRepository {
      * Increments the stored messages number
      */
     synchronized public void incrementStoredMessages() {
-        storedMessages++;
+        if(storedMessages < maxEmailsStored){
+            storedMessages++;
+        }
+
     }
 
     /**
@@ -372,16 +380,16 @@ public class EmailRepository {
      * Saves messageuidlist as a jsontext into sharedpreferences
      */
     public static void saveMessageUIDList(){
-        System.out.println("trying to save messageUIDList" + NdnFolder.messageUidList.isEmpty());
-            System.out.println("Saving MessageUIDList..The array is");
+//        System.out.println("trying to save messageUIDList" + NdnFolder.messageUidList.isEmpty());
+//            System.out.println("Saving MessageUIDList..The array is");
             messageUIDList.clear();
             messageUIDList.addAll(NdnFolder.messageUidList);
-            for(int i = 0;i < messageUIDList.size();i++){
-                System.out.print(messageUIDList.get(i) + " ");
-            }
+//            for(int i = 0;i < messageUIDList.size();i++){
+//                System.out.print(messageUIDList.get(i) + " ");
+//            }
             Gson gson = new Gson();
             String jsonText = gson.toJson(messageUIDList);
-            System.out.println("Json Text" + jsonText);
+//            System.out.println("Json Text" + jsonText);
             sharedPreferences = context.getSharedPreferences("uidlist",0);
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putString("msguid", jsonText);
@@ -399,20 +407,25 @@ public class EmailRepository {
         Gson gson = new Gson();
         sharedPreferences = context.getSharedPreferences("uidlist",0);
         String jsonText = sharedPreferences.getString("msguid", null);
-        System.out.println("Json Text" + jsonText);
+//        System.out.println("Json Text" + jsonText);
         if(jsonText!=null){
-            System.out.println("Updating messageUidList...");
+//            System.out.println("Updating messageUidList...");
             List<String> textList = Arrays.asList(gson.fromJson(jsonText, String[].class));
             messageUIDList = textList.stream().map(Long::parseLong).collect(Collectors.toList());
-            for(int i = 0;i < messageUIDList.size();i++){
-                System.out.print(messageUIDList.get(i) + " ");
-            }
+//            for(int i = 0;i < messageUIDList.size();i++){
+//                System.out.print(messageUIDList.get(i) + " ");
+//            }
             NdnFolder.messageUidList.addAll(messageUIDList);
         }
 //        String[] text = gson.fromJson(jsonText, String[].class);
 
 
     }
+
+    public static boolean isFetched(long uid){
+        return fetchedMap.contains(uid);
+    }
+    public static int isGettingFetchedSize(){return isGettingFetched.size();}
 
 
     /**
@@ -421,10 +434,10 @@ public class EmailRepository {
     public static void saveFlagMap(){
             flagsMap.clear();
             flagsMap.putAll(NdnFolder.flagsMap);
-            System.out.println("Saved Flag Hash Map");
-            for(HashMap.Entry<Long,Flags> entry : flagsMap.entrySet()){
-                System.out.println("HashMap key" + entry.getKey() + "HashMap value" + entry.getValue());
-            }
+//            System.out.println("Saved Flag Hash Map");
+//            for(HashMap.Entry<Long,Flags> entry : flagsMap.entrySet()){
+//                System.out.println("HashMap key" + entry.getKey() + "HashMap value" + entry.getValue());
+//            }
 
             JSONArray jsonArray = new JSONArray();
             for(Long key: flagsMap.keySet()){
@@ -441,7 +454,7 @@ public class EmailRepository {
             sharedPreferences = context.getSharedPreferences("flagmap",0);
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putString("map",jsonArray.toString());
-            System.out.println("JSON text saved is" + jsonArray.toString());
+//            System.out.println("JSON text saved is" + jsonArray.toString());
             editor.apply();
 
     }
@@ -452,17 +465,17 @@ public class EmailRepository {
      * hashmap
      */
     public static void updateFlagMap(){
-        System.out.println("Updating Flag Map");
+//        System.out.println("Updating Flag Map");
         sharedPreferences = context.getSharedPreferences("flagmap",0);
         String jsonText = sharedPreferences.getString("map",null);
-        System.out.println("Update Flag map with " + jsonText);
+//        System.out.println("Update Flag map with " + jsonText);
         if(jsonText!=null){
             try {
                 JSONArray jsonArray = new JSONArray(jsonText);
                 for(int i = 0; i < jsonArray.length();i++) {
                     JSONObject jsonObject = jsonArray.getJSONObject(i);
                     flagsMap.put(jsonObject.getLong("key"),new Flags(jsonObject.get("val").toString()));
-                    System.out.print("Value is " + flagsMap.get(jsonObject.getLong("key")));
+//                    System.out.print("Value is " + flagsMap.get(jsonObject.getLong("key")));
                 }
                 NdnFolder.flagsMap.putAll(flagsMap);
             } catch (JSONException e) {
@@ -480,15 +493,15 @@ public class EmailRepository {
      */
     @RequiresApi(Build.VERSION_CODES.N)
     public static void updateMailboxUids(){
-        System.out.println("ndnMessageList empty " + NdnFolder.messageUidList.isEmpty() + "ndnFlagMap Empty? " + NdnFolder.flagsMap.isEmpty());
+//        System.out.println("ndnMessageList empty " + NdnFolder.messageUidList.isEmpty() + "ndnFlagMap Empty? " + NdnFolder.flagsMap.isEmpty());
         if(NdnFolder.messageUidList.isEmpty() && NdnFolder.flagsMap.isEmpty()&&context!=null){
-            System.out.println("Updating FlagMap and uidlist");
+//            System.out.println("Updating FlagMap and uidlist");
             updateMessageUIDList();
             updateFlagMap();
             NdnFolder.lastSize  = NdnFolder.messageUidList.size();
         }
 
-        System.out.println("ndnMessageList length " + NdnFolder.messageUidList.size() + "ndnFlagMap size? " + NdnFolder.flagsMap.size());
+//        System.out.println("ndnMessageList length " + NdnFolder.messageUidList.size() + "ndnFlagMap size? " + NdnFolder.flagsMap.size());
 
     }
 
@@ -617,7 +630,7 @@ public class EmailRepository {
     public void shutdownRelayer() {
         if (hasInternetBefore) {
             try {
-                if (relayer.getServerSocket() != null) {
+                if (relayer!=null && relayer.getServerSocket() != null) {
                     relayer.getServerSocket().close();
                 }
             } catch (IOException e) {
@@ -753,17 +766,23 @@ public class EmailRepository {
      * Clears Database and sets sync number and sync checkpoint to 0
      */
     public void clearDatabase() {
+
+//        System.out.println("Again trying to clear");
         try {
             NdnFolder.syncNumber = 0;
             NdnFolder.syncCheckpoint = 0;
-            ImapToNdnTranslator.stopDB();
+//            ImapToNdnTranslator.stopDB();
             new Database("Attribute", ndnDBConnection.getConfig()).close();
             new Database("MimeMessage", ndnDBConnection.getConfig()).close();
             new Database("MessageID", ndnDBConnection.getConfig()).close();
             new Database("MailFolder", ndnDBConnection.getConfig()).close();
+            saveFlagMap();
+            saveMessageUIDList();
+//            System.out.println("Worked");
 
 
         } catch (CouchbaseLiteException e) {
+            System.out.println(e);
             e.printStackTrace();
         }
     }
@@ -798,6 +817,74 @@ public class EmailRepository {
 
             }
         });
+    }
+
+    /**
+     * Saves the password and username as a shared preference
+     * @param pass pass of the user
+     * @param userName userName of the user
+     */
+    public void saveUser(String pass, String userName){
+        sharedPreferences = context.getSharedPreferences("User",0);
+        SharedPreferences.Editor editor= sharedPreferences.edit();
+        editor.putString("pass",pass);
+        editor.putString("userName",userName);
+        editor.apply();
+//        Log.d(TAG, "Username saved" + userName + "Pass saved" + pass);
+//        Log.d(TAG, "User in SP" + sharedPreferences.getString("userName","") + "Pass in SP" + sharedPreferences.getString("pass",""));
+    }
+
+    public static boolean checkFirstTime(){
+        sharedPreferences = context.getSharedPreferences("User",0);
+        SharedPreferences.Editor editor= sharedPreferences.edit();
+        boolean isFirstTime = sharedPreferences.getBoolean("first",false);
+
+        if(!isFirstTime) {
+            editor.putBoolean("first", true);
+        }
+        editor.apply();
+        System.out.println("CheckFirstTimeinER " + isFirstTime);
+        return isFirstTime;
+    }
+
+
+
+    /**
+     * Removes user from the app by removing the account from the shared preference
+     */
+    public void removeUser(){
+        sharedPreferences = context.getSharedPreferences("User",0);
+        SharedPreferences.Editor editor= sharedPreferences.edit();
+        editor.remove("pass");
+        editor.remove("userName");
+        editor.remove("first");
+        editor.clear();
+        editor.commit();
+
+        sharedPreferences = context.getSharedPreferences("User",0);
+        String name = sharedPreferences.getString("userName","");
+        String pass = sharedPreferences.getString("pass","");
+//        Log.d("Remove","Remove User" + name + pass);
+
+        hmap.clear();
+    }
+
+    /**
+     * Returns user details so that it can be used to log in into the app
+     * @return Hashmap containing the user details
+     */
+    public HashMap<String, String> getUser(){
+        hmap.clear();
+        sharedPreferences = context.getSharedPreferences("User",0);
+        String name = sharedPreferences.getString("userName","");
+        String pass = sharedPreferences.getString("pass","");
+        if(name==null || pass==null) {
+            return null;
+        }
+        hmap.put("name",name);
+        hmap.put("pass",pass);
+//        Log.d(TAG, "Username go" + hmap.get("name") + "Pass got" + hmap.get("pass"));
+        return hmap;
     }
 
 }

@@ -119,7 +119,7 @@ public class EmailFactory {
         /* ------------------------- MimeMessage ------------------------- */
 
         // Deal with MimeMessage Interest
-        int numberOfMessage = attribute.getSize() / 4000 + 1;
+        int numberOfMessage = attribute.getActualSize() / 4000 + 1;
         StringBuilder messageBuilder = new StringBuilder();
         String mimeMessageContentString = null;
         for (int j = 0; j < numberOfMessage; j++) {

@@ -1,5 +1,6 @@
 package edu.ua.cs.nrl.mailsync.fragments;
 
+import android.app.Dialog;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
@@ -8,6 +9,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.util.Log;
@@ -16,8 +18,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ProgressBar;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+
+import java.util.HashMap;
 
 import javax.mail.Message;
 
@@ -57,8 +67,11 @@ public class MainServerFragment extends BaseFragment {
     private String userPassword;
     private EmailViewModel emailViewModel;
     ProgressBar progressBar;
+    private GoogleSignInClient googleSignInClient;
+    GoogleSignInAccount account;
 
     private String TAG = "MainServerFragment";
+    private boolean isGoogleSignin = false;
 
     public static MainServerFragment newInstance() {
         return new MainServerFragment();
@@ -69,12 +82,23 @@ public class MainServerFragment extends BaseFragment {
         super.onCreate(savedInstanceState);
 
         emailViewModel = ViewModelProviders.of(getActivity()).get(EmailViewModel.class);
-        android.support.v7.app.ActionBar actionBar
-                = ((AppCompatActivity) getActivity()).getSupportActionBar();
-        ColorDrawable colorDrawable = new ColorDrawable(Color.parseColor("#ffffff"));
-        actionBar.setBackgroundDrawable(colorDrawable);
-        actionBar.setTitle(Html.fromHtml("<font color='#009a68'>MailSync</font>"));
+//        android.support.v7.app.ActionBar actionBar
+//                = ((AppCompatActivity) getActivity()).getSupportActionBar();
+//        ColorDrawable colorDrawable = new ColorDrawable(Color.parseColor("#ffffff"));
+//        actionBar.setBackgroundDrawable(colorDrawable);
+//        actionBar.setTitle(Html.fromHtml("<font color='#009a68'>MailSync</font>"));
+//        actionBar.show();
 
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+        googleSignInClient = GoogleSignIn.getClient(getActivity(), gso);
+        account = GoogleSignIn.getLastSignedInAccount(getActivity());
+        if (account != null) {
+            isGoogleSignin = true;
+        }
+
+        emailViewModel.init(userEmail, userPassword);
 
     }
 
@@ -101,7 +125,7 @@ public class MainServerFragment extends BaseFragment {
         //initializes the view of viewmodel and the progress bar to 0
         Button button = getActivity().findViewById(R.id.run_server);
         emailViewModel.view= rootView;
-        emailViewModel.init(userEmail, userPassword,button );
+        emailViewModel.init(userEmail, userPassword);
         progressBar= rootView.findViewById(R.id.download_bar);
         progressBar.setProgress(0);
         runServer();
@@ -188,7 +212,10 @@ public class MainServerFragment extends BaseFragment {
                                 public void run() {
 //                  synchronized (TranslateWorker.class) {
 //                                    emailViewModel.shutdownRelayer();
-                                    runServerButton.performClick();
+                                    if(runServerButton!=null){
+                                        runServerButton.performClick();
+                                    }
+
                                     System.out.println("Server Started");
                                     emailViewModel.getAllUids();
 //                  }
@@ -209,14 +236,73 @@ public class MainServerFragment extends BaseFragment {
 
     /**
      * Start Server
+     * Depends on if the user is logged in through gmail or through traditional app username and password
+     * If user is logged through google sign in then a pop up dialog is created to ask password from the user
+     * because google does not give access to password  and then starts a server
+     * If user logged in through normal means then there is no dialog box that will open
      */
     @OnClick(R2.id.run_server)
     public void setRunServerButton() {
-        serverStatus.setText(R.string.running);
-        Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
-        Log.d(TAG,"Are you working"  + userEmail+userPassword);
-        emailViewModel.startServer(userEmail, userPassword);
-        Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
+//        serverStatus.setText(R.string.running);
+//        Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
+//        Log.d(TAG,"Are you working"  + userEmail+userPassword);
+//        emailViewModel.startServer(userEmail, userPassword);
+//        Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
+
+        if (isGoogleSignin) {
+            final Dialog dialog = new Dialog(getActivity());
+            dialog.setContentView(R.layout.customdialog);
+            dialog.setTitle("Connect");
+            Button dialogButton = (Button) dialog.findViewById(R.id.btnLogin);
+            EditText editText = dialog.findViewById(R.id.etPassword);
+            // if button is clicked, close the custom dialog
+            HashMap<String, String> hmap = emailViewModel.getUser();
+            if(hmap==null||hmap.get("pass")==null ||hmap.get("name")==null|| hmap.get("pass").equals("") || hmap.get("name").equals("")){
+                dialogButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        EditText editText = dialog.findViewById(R.id.etPassword);
+                        System.out.println("Edit text " + editText);
+
+                        if (editText!= null) {
+                            emailViewModel.getPassword().setValue(String.valueOf(editText.getText()));
+                            emailViewModel.getEmail().setValue(account.getEmail());
+                            System.out.println("Dialog saved" + userEmail + userPassword);
+                            emailViewModel.init(userEmail, userPassword);
+                            Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
+                            emailViewModel.startServer(userEmail, userPassword);
+                            emailViewModel.saveUser(userPassword,userEmail);
+                            Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
+                            serverStatus.setText(getString(R.string.running));
+                        }
+
+                        dialog.dismiss();
+                    }
+                });
+
+                dialog.show();
+            } else {
+                userPassword = hmap.get("pass");
+                userEmail = hmap.get("name");
+                emailViewModel.getPassword().setValue(String.valueOf(userPassword));
+                emailViewModel.init(userEmail, userPassword);
+                Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
+                emailViewModel.startServer(userEmail, userPassword);
+                Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
+                serverStatus.setText(getString(R.string.running));
+            }
+
+
+        }
+        else{
+            Toast.makeText(getContext(), userEmail + userPassword, Toast.LENGTH_SHORT).show();
+            emailViewModel.startServer(userEmail, userPassword);
+            Toast.makeText(getActivity(), "Server is running ...", Toast.LENGTH_SHORT).show();
+            serverStatus.setText(getString(R.string.running));
+
+        }
+
+
 
     }
 
@@ -225,6 +311,7 @@ public class MainServerFragment extends BaseFragment {
      */
     @OnClick(R2.id.btn_clear_database)
     public void setClearDatabaseButton() {
+//        System.out.println("Trying to clear");
         EmailViewModel.clearDatabase();
         EmailRepository emailRepository = new EmailRepository();
         emailRepository.deleteAllStoredMessage();
@@ -269,6 +356,32 @@ public class MainServerFragment extends BaseFragment {
             context.startActivity(intent);
         }
     }
+
+    /**
+     * When signout is clicked the gmail account is signed out and then sent to
+     * the login page
+     */
+    @OnClick(R.id.sign_out)
+    public void signOut() {
+        if (googleSignInClient != null) {
+            googleSignInClient.signOut()
+                    .addOnCompleteListener(getActivity(), (task) -> {
+                        Toast.makeText(getContext(), "Signed Out", Toast.LENGTH_SHORT).show();
+                        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+                        fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer, new LoginFragment());
+                        fragmentTransaction.commit();
+                    });
+        } else {
+            emailViewModel.removeUser();
+            Toast.makeText(getContext(), "Signed Out" + emailViewModel.getEmail() + emailViewModel.getPassword(), Toast.LENGTH_SHORT).show();
+            FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+            fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer, new LoginFragment());
+            fragmentTransaction.commit();
+        }
+        emailViewModel.removeUser();
+
+    }
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();

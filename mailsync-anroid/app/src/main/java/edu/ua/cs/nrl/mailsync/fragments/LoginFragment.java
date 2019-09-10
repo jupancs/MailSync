@@ -12,6 +12,18 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.Toast;
+
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.SignInButton;
+import com.google.android.gms.common.api.Api;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
+
+import java.util.HashMap;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -25,6 +37,7 @@ import edu.ua.cs.nrl.mailsync.activities.MainServerActivity;
 
 public class LoginFragment extends BaseFragment {
 
+
   @BindView(R2.id.fragment_login_userEmail)
   TextInputEditText userEmailEditText;
 
@@ -34,6 +47,8 @@ public class LoginFragment extends BaseFragment {
   @BindView(R2.id.fragment_login_login_button)
   Button loginButton;
 
+  int RC_SIGN_IN =0;
+  GoogleSignInClient googleSignInClient;
   private Unbinder unbinder;
 
   private String email;
@@ -46,9 +61,42 @@ public class LoginFragment extends BaseFragment {
   }
 
   @Override
+  public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    if(requestCode == RC_SIGN_IN){
+//      System.out.println("In here gmail 2");
+      Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+      handleSiginResult(task);
+
+    }
+  }
+
+  /**
+   * Changes fragment from login to mainserver and updates the viewmodel
+   * @param task GoogleSignIn Task
+   */
+  public void handleSiginResult(Task<GoogleSignInAccount> task){
+    try{
+      System.out.println("In here gmail");
+      GoogleSignInAccount account = task.getResult(ApiException.class);
+      emailViewModel.getEmail().setValue(account.getEmail());
+      emailViewModel.getPassword().setValue("Google Sign In");
+      FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+      fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer,new MainServerFragment());
+      fragmentTransaction.commit();
+    } catch (ApiException e){
+      System.out.println(e);
+    }
+  }
+
+  @Override
   public void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    ((AppCompatActivity) getActivity()).getSupportActionBar().hide();
+    ((AppCompatActivity) getActivity()).getSupportActionBar().show();
+    GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+            .build();
+    googleSignInClient = GoogleSignIn.getClient(getActivity(),gso);
   }
 
   @Nullable
@@ -69,13 +117,53 @@ public class LoginFragment extends BaseFragment {
     password = userPasswordEditText.getText().toString();
     emailViewModel.getEmail().setValue(email);
     emailViewModel.getPassword().setValue(password);
-
+    emailViewModel.saveUser(password,email);
     FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
     fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer,new MainServerFragment());
     fragmentTransaction.commit();
   }
 
+  /**
+   * Starts google sign in intent
+   */
+  @OnClick(R.id.sign_in_button)
+  public void clickGmailLogin(){
+//      System.out.println("In here gmail");
+      Intent signInIntent = googleSignInClient.getSignInIntent();
+      startActivityForResult(signInIntent,RC_SIGN_IN);
+  }
 
+
+  /**
+   * Checks if there already exists a gmail account which was logged in last time or
+   * if there already exists an account that was saved before hand through normal login
+   * If there was then it reloads that into the app
+   */
+  @Override
+  public void onStart() {
+    super.onStart();
+    GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getActivity());
+    HashMap<String, String>hmap = emailViewModel.getUser();
+    if(account!=null){
+      emailViewModel.getEmail().setValue(account.getEmail());
+      emailViewModel.getPassword().setValue("Google Sign In");
+      FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+      fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer,new MainServerFragment());
+      fragmentTransaction.commit();
+    } else if(hmap!=null){
+      if(!hmap.get("name").equals("") && !hmap.get("pass").equals("")){
+        System.out.println("I am executed" + hmap.get("name") + hmap.get("pass"));
+        emailViewModel.getEmail().setValue(hmap.get("name"));
+        emailViewModel.getPassword().setValue(hmap.get("pass"));
+//        System.out.println("Pass" + hmap.get("pass") + " " + "User" + hmap.get("name"));
+        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+        fragmentTransaction.replace(R.id.activity_fragment_base_fragmentContainer,new MainServerFragment());
+        fragmentTransaction.commit();
+      }
+
+
+    }
+  }
 
 
   @Override
